@@ -1,7 +1,7 @@
 // ScheduleTime.jsx
 import React, { useState, useEffect } from "react";
 import { IoCalendar, IoTime, IoPerson, IoClose, IoCheckmarkCircle, IoChevronBack, IoChevronForward } from "react-icons/io5";
-import "./ScheduleTime.css";
+import './ScheduleTime.css';
 
 const ScheduleTime = ({ 
   isOpen, 

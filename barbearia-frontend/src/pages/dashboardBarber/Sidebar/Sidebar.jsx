@@ -5,11 +5,14 @@ import {
   LuWallet, LuChartBarDecreasing, LuLogOut, LuSun, LuMoon
 } from "react-icons/lu";
 import { GoGear } from "react-icons/go";
+import { useAuth } from "../../../contexts/authContext";
 import "./sidebar.css";
 import Logo from "../../../assets/imagens/logo.png";
 
 const Sidebar = () => {
+  const { user, barbershop, signOut } = useAuth();
   const [isLightMode, setIsLightMode] = useState(false);
+  const navigate = useNavigate();
 
   const toggleTheme = () => {
     setIsLightMode(!isLightMode);
@@ -24,15 +27,22 @@ const Sidebar = () => {
     }
   }, [isLightMode]);
 
-  const navigate = useNavigate();
+  const handleLogout = () => {
+    signOut();
+    navigate('/login');
+  };
 
   return (
     <aside className="sidebar">
       <div className="profile">
-        <img className="profile-icon" src={Logo} alt="LogoBarbearia"/>
+        <img 
+          className="profile-icon" 
+          src={barbershop?.logo || Logo} 
+          alt="Logo Barbearia"
+        />
         <div className="profile-text">
-          <h2>Bem-vindo, Alessandro</h2>
-          <p>Gerenciando Barbearia Style's</p>
+          <h2>Bem-vindo, {user?.nome?.split(' ')[0] || 'Barbeiro'}</h2>
+          <p>Gerenciando {barbershop?.nome_barbearia || 'Sua Barbearia'}</p>
         </div>
       </div>
 
@@ -54,7 +64,7 @@ const Sidebar = () => {
           {isLightMode ? <LuMoon className="icon" /> : <LuSun className="icon" />}
           {isLightMode ? "Modo Escuro" : "Modo Claro"}
         </div>
-        <div className="logout" onClick={() => navigate('/')}>
+        <div className="logout" onClick={handleLogout}>
           <LuLogOut className="icon" /> Sair
         </div>
       </div>

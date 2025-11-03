@@ -1,119 +1,570 @@
-/* BarberDetails/BarberDetails.css */
+/* BarberDetails css */
 
-.barber-details-container {
+.client-barbershop-details-page {
+  min-height: 100vh;
+  background-color: var(--client-bg-primary);
+  color: var(--text-primary-light);
+  margin-left: var(--sidebar-width);
+  width: calc(100% - var(--sidebar-width));
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+@media (max-width: 1024px) {
+  .client-barbershop-details-page {
+    margin-left: 0;
     width: 100%;
-    padding: 0;
-    display: flex;
+  }
+}
+
+/* Header */
+.client-barbershop-details-header {
+  position: relative;
+  height: 200px;
+  background: linear-gradient(135deg, var(--client-bg-secondary) 0%, var(--client-bg-primary) 100%);
+  overflow: hidden;
+}
+
+.client-barbershop-details-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(15, 23, 42, 0.3), rgba(15, 23, 42, 0.9));
+  z-index: 1;
+}
+
+.client-barbershop-details-header-bg {
+  position: absolute;
+  inset: 0;
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+  opacity: 0.3;
+}
+
+.client-barbershop-details-header-content {
+  position: relative;
+  z-index: 2;
+  padding: var(--spacing-lg);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.client-barbershop-details-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.client-barbershop-details-back-btn {
+  background: rgba(31, 41, 55, 0.8);
+  border: 1px solid var(--client-border);
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.client-barbershop-details-back-btn:hover {
+  background: rgba(55, 65, 81, 0.9);
+  transform: translateX(-2px);
+  border-color: var(--primary-blue);
+}
+
+.client-barbershop-details-header-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.client-barbershop-details-action-btn {
+  background: rgba(31, 41, 55, 0.8);
+  border: 1px solid var(--client-border);
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.client-barbershop-details-action-btn:hover {
+  background: rgba(55, 65, 81, 0.9);
+  transform: translateY(-2px);
+  border-color: var(--primary-blue);
+}
+
+.client-barbershop-details-action-btn.favorite.active {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+/* Logo */
+.client-barbershop-details-info-section {
+  padding: 0 var(--spacing-lg);
+  margin-top: -60px;
+  position: relative;
+  z-index: 3;
+}
+
+.client-barbershop-details-logo-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.client-barbershop-details-logo {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 4px solid var(--client-bg-primary);
+  background: white;
+  padding: var(--spacing-sm);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  object-fit: contain;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.client-barbershop-details-title-section {
+  text-align: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.client-barbershop-details-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.client-barbershop-details-rating {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.client-barbershop-details-rating-star {
+  width: 14px;
+  height: 14px;
+}
+
+.client-barbershop-details-address {
+  color: #9ca3af;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+/* Tabs */
+.client-barbershop-details-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--client-border);
+  padding: 0 var(--spacing-lg);
+  background: var(--client-bg-primary);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.client-barbershop-details-tab-btn {
+  flex: 1;
+  padding: var(--spacing-lg) var(--spacing-sm);
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  text-align: center;
+}
+
+.client-barbershop-details-tab-btn:hover {
+  color: #9ca3af;
+}
+
+.client-barbershop-details-tab-btn.active {
+  color: var(--primary-blue);
+}
+
+.client-barbershop-details-tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--primary-blue);
+}
+
+/* Tab Content */
+.client-barbershop-details-tab-content {
+  padding: var(--spacing-lg);
+  background: var(--client-bg-primary);
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Services List */
+.client-barbershop-details-services-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.client-barbershop-details-service-card {
+  background: var(--client-bg-card);
+  border: 1px solid var(--client-border);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+  animation: fadeInUp 0.4s ease-out;
+}
+
+.client-barbershop-details-service-card:hover {
+  background: rgba(31, 41, 55, 0.8);
+  border-color: rgba(59, 130, 246, 0.5);
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.client-barbershop-details-service-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.client-barbershop-details-service-icon {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--primary-blue-light);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.client-barbershop-details-service-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.client-barbershop-details-service-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+  margin: 0 0 0.25rem 0;
+}
+
+.client-barbershop-details-service-price {
+  font-size: 0.75rem;
+  color: var(--success);
+  font-weight: 600;
+  margin: 0;
+}
+
+.client-barbershop-details-service-action {
+  flex-shrink: 0;
+}
+
+.client-barbershop-details-schedule-btn {
+  background: var(--primary-blue);
+  color: white;
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--border-radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.client-barbershop-details-schedule-btn:hover {
+  background: var(--primary-blue-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+/* Products List */
+.client-barbershop-details-products-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.client-barbershop-details-product-card {
+  background: var(--client-bg-card);
+  border: 1px solid var(--client-border);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+  animation: fadeInUp 0.4s ease-out;
+}
+
+.client-barbershop-details-product-card:hover {
+  background: rgba(31, 41, 55, 0.8);
+  border-color: rgba(139, 92, 246, 0.5);
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+}
+
+.client-barbershop-details-product-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.client-barbershop-details-product-icon {
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.client-barbershop-details-product-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.client-barbershop-details-product-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+  margin: 0 0 0.25rem 0;
+}
+
+.client-barbershop-details-product-price {
+  font-size: 0.75rem;
+  color: var(--success);
+  font-weight: 600;
+  margin: 0;
+}
+
+.client-barbershop-details-product-stock {
+  font-size: 0.625rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
+/* Details Section */
+.client-barbershop-details-details-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.client-barbershop-details-detail-card {
+  background: var(--client-bg-card);
+  border: 1px solid var(--client-border);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
+  animation: fadeInUp 0.4s ease-out;
+}
+
+.client-barbershop-details-detail-card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  margin: 0 0 0.75rem 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.client-barbershop-details-detail-card-icon {
+  color: var(--primary-blue);
+}
+
+.client-barbershop-details-detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid rgba(55, 65, 81, 0.5);
+}
+
+.client-barbershop-details-detail-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.client-barbershop-details-detail-label {
+  color: #9ca3af;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.client-barbershop-details-detail-value {
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.client-barbershop-details-opening-hours-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.client-barbershop-details-hour-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm);
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid rgba(55, 65, 81, 0.3);
+}
+
+.client-barbershop-details-hour-day {
+  color: #9ca3af;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.client-barbershop-details-hour-time {
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.client-barbershop-details-hour-time.closed {
+  color: #6b7280;
+}
+
+/* Rating Overview */
+.client-barbershop-details-rating-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.client-barbershop-details-rating-overview {
+  background: var(--client-bg-card);
+  border: 1px solid var(--client-border);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-xl);
+  text-align: center;
+  animation: fadeInUp 0.4s ease-out;
+}
+
+.client-barbershop-details-rating-score {
+  font-size: 3rem;
+  font-weight: 700;
+  color: white;
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.client-barbershop-details-rating-stars-large {
+  display: flex;
+  justify-content: center;
+  gap: 0.25rem;
+  margin-bottom: var(--spacing-sm);
+}
+
+.client-barbershop-details-rating-star-large {
+  width: 24px;
+  height: 24px;
+}
+
+.client-barbershop-details-rating-count {
+  color: #9ca3af;
+  font-size: 0.875rem;
+}
+
+/* Empty State */
+.client-barbershop-details-empty-state {
+  padding: 3rem var(--spacing-lg);
+  text-align: center;
+  color: #6b7280;
+}
+
+.client-barbershop-details-empty-icon {
+  margin: 0 auto var(--spacing-lg);
+  color: #4b5563;
+  width: 48px;
+  height: 48px;
+}
+
+.client-barbershop-details-empty-state h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #9ca3af;
+  margin-bottom: var(--spacing-sm);
+}
+
+.client-barbershop-details-empty-state p {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .client-barbershop-details-header {
+    height: 180px;
+  }
+
+  .client-barbershop-details-logo {
+    width: 100px;
+    height: 100px;
+  }
+
+  .client-barbershop-details-name {
+    font-size: 1.25rem;
+  }
+
+  .client-barbershop-details-service-card,
+  .client-barbershop-details-product-card {
     flex-direction: column;
-    gap: 1rem;
+    align-items: stretch;
+    gap: 0.75rem;
   }
-  
-  .barber-details-card {
-    background: rgba(30, 41, 59, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 0.5rem;
-    padding: 1rem;
-    animation: fadeInUp 0.4s ease-out;
+
+  .client-barbershop-details-service-action {
+    align-self: stretch;
   }
-  
-  .barber-details-title {
-    font-size: 1rem;
-    font-weight: 700;
-    color: white;
-    margin: 0 0 1rem 0;
+
+  .client-barbershop-details-schedule-btn {
+    width: 100%;
   }
-  
-  .barber-details-content {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+
+  .client-barbershop-details-tab-btn {
+    font-size: 0.75rem;
+    padding: 0.75rem 0.25rem;
   }
-  
-  .barber-details-text {
-    font-size: 0.875rem;
-    color: #d1d5db;
-    margin: 0;
-    line-height: 1.5;
-  }
-  
-  /* Horário de Atendimento */
-  .barber-details-hours {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .barber-details-hour-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  }
-  
-  .barber-details-hour-item:last-child {
-    border-bottom: none;
-  }
-  
-  .barber-details-day {
-    font-size: 0.875rem;
-    color: #d1d5db;
-    font-weight: 400;
-  }
-  
-  .barber-details-time {
-    font-size: 0.875rem;
-    color: white;
-    font-weight: 500;
-  }
-  
-  /* Formas de Pagamento */
-  .barber-details-payment-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .barber-details-payment-item {
-    font-size: 0.875rem;
-    color: #d1d5db;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  }
-  
-  .barber-details-payment-item:last-child {
-    border-bottom: none;
-  }
-  
-  /* Responsive */
-  @media (max-width: 480px) {
-    .barber-details-card {
-      padding: 0.875rem;
-    }
-  
-    .barber-details-title {
-      font-size: 0.9375rem;
-    }
-  
-    .barber-details-day,
-    .barber-details-time,
-    .barber-details-text,
-    .barber-details-payment-item {
-      font-size: 0.8125rem;
-    }
-  }
-  
-  /* Animation */
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
+}

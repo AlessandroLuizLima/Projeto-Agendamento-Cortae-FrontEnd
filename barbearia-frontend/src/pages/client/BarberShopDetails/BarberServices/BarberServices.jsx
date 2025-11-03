@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { IoCut } from 'react-icons/io5';
 import ScheduleModal from './ScheduleTime/ScheduleTime';
-import './BarberServices.css';
 
 const BarberServices = ({ services = [], clientName = "Miguel Oliveira Rodrigues" }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);

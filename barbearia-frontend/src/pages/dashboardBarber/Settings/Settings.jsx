@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { 
   FiSettings, 
   FiUser, 
@@ -20,59 +20,96 @@ import {
   FiAlertTriangle,
   FiInfo
 } from "react-icons/fi";
+import api from '../../../services/api';
+import { useAuth } from '../../../contexts/authContext';
 import "./Settings.css";
 
 export default function Settings() {
+  const { barbershop: contextBarbershop, updateBarbershop } = useAuth();
   const [activeTab, setActiveTab] = useState("perfil");
   const [showSuccess, setShowSuccess] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [showValues, setShowValues] = useState(true);
   const [logoPreview, setLogoPreview] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
   const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
-    nomeEstabelecimento: "Barbearia Estilo Clássico",
-    telefone: "(11) 99999-9999",
-    email: "contato@barbeariaestilo.com",
-    endereco: "Rua das Flores, 123, Centro, São Paulo/SP",
+    nomeEstabelecimento: "",
+    telefone: "",
+    email: "",
+    endereco: "",
     enderecoDetalhado: {
-      rua: "Rua das Flores",
-      numero: "123",
-      bairro: "Centro",
-      cidade: "São Paulo",
-      estado: "SP",
-      pontoReferencia: "Próximo ao shopping"
+      rua: "",
+      numero: "",
+      bairro: "",
+      cidade: "",
+      estado: "",
+      pontoReferencia: ""
     },
-    diasAtendimento: ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"],
+    diasAtendimento: ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira"],
     horarioInicio: "08:00",
     horarioFim: "18:00",
     logo: null,
-    emailNotificacoes: "admin@barbeariaestilo.com",
-    notificacoes: {
-      novosAgendamentos: true,
-      cancelamentos: true,
-      reagendamentos: false,
-      lembretes: true,
-      relatorios: false
-    },
-    configuracoes: {
-      tema: "claro",
-      idioma: "pt-BR",
-      timezone: "America/Sao_Paulo",
-      backup: false,
-      analytics: true
-    },
-    seguranca: {
-      senhaAtual: "",
-      novaSenha: "",
-      confirmarSenha: "",
-      autenticacao2FA: false,
-      sessaoSegura: true
-    }
+    emailNotificacoes: "",
+    descricao: ""
   });
 
   const [currentError, setCurrentError] = useState(null);
+
+  // Carregar dados da barbearia ao montar
+  useEffect(() => {
+    const loadBarbershopData = async () => {
+      try {
+        setLoadingData(true);
+        const response = await api.get('/barbershops/me');
+        const data = response.data.barbershop;
+
+        if (data) {
+          setFormData({
+            nomeEstabelecimento: data.nome_estabelecimento || "",
+            telefone: data.telefone || "",
+            email: data.email || "",
+            endereco: data.endereco || "",
+            enderecoDetalhado: {
+              rua: data.rua || "",
+              numero: data.numero || "",
+              bairro: data.bairro || "",
+              cidade: data.cidade || "",
+              estado: data.estado || "",
+              pontoReferencia: data.ponto_referencia || ""
+            },
+            diasAtendimento: data.dias_atendimento || ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira"],
+            horarioInicio: data.horario_inicio || "08:00",
+            horarioFim: data.horario_fim || "18:00",
+            logo: data.logo || null,
+            emailNotificacoes: data.email || "",
+            descricao: data.descricao || ""
+          });
+
+          if (data.logo) {
+            setLogoPreview(data.logo);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados da barbearia:', error);
+        // Se não encontrar, usa dados do context ou padrões
+        if (contextBarbershop) {
+          setFormData(prev => ({
+            ...prev,
+            nomeEstabelecimento: contextBarbershop.nome_estabelecimento || "",
+            telefone: contextBarbershop.telefone || "",
+            email: contextBarbershop.email || ""
+          }));
+        }
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    loadBarbershopData();
+  }, [contextBarbershop]);
 
   const tabs = [
     { key: "perfil", label: "Perfil da Empresa", icon: FiUser },
@@ -93,13 +130,11 @@ export default function Settings() {
     const horasPorDia = formData.horarioInicio && formData.horarioFim ? 
       calculateHours(formData.horarioInicio, formData.horarioFim) : 0;
     const horasSemanais = diasSelecionados * horasPorDia;
-    const notificacoesAtivas = Object.values(formData.notificacoes).filter(Boolean).length;
 
     return {
       diasSelecionados,
       horasPorDia,
-      horasSemanais,
-      notificacoesAtivas
+      horasSemanais
     };
   };
 
@@ -119,44 +154,6 @@ export default function Settings() {
 
     if (currentError?.field === name) {
       setCurrentError(null);
-    }
-
-    if (type === "checkbox") {
-      if (name.startsWith("notificacao_")) {
-        const notificationType = name.replace("notificacao_", "");
-        setFormData(prev => ({
-          ...prev,
-          notificacoes: {
-            ...prev.notificacoes,
-            [notificationType]: checked
-          }
-        }));
-        return;
-      }
-      
-      if (name.startsWith("config_")) {
-        const configType = name.replace("config_", "");
-        setFormData(prev => ({
-          ...prev,
-          configuracoes: {
-            ...prev.configuracoes,
-            [configType]: checked
-          }
-        }));
-        return;
-      }
-
-      if (name.startsWith("seguranca_")) {
-        const securityType = name.replace("seguranca_", "");
-        setFormData(prev => ({
-          ...prev,
-          seguranca: {
-            ...prev.seguranca,
-            [securityType]: checked
-          }
-        }));
-        return;
-      }
     }
 
     if (type === "file" && name === "logo") {
@@ -194,30 +191,6 @@ export default function Settings() {
         enderecoDetalhado: {
           ...prev.enderecoDetalhado,
           [fieldName]: newValue
-        }
-      }));
-      return;
-    }
-
-    if (name.startsWith("seguranca_")) {
-      const fieldName = name.replace("seguranca_", "");
-      setFormData(prev => ({
-        ...prev,
-        seguranca: {
-          ...prev.seguranca,
-          [fieldName]: value
-        }
-      }));
-      return;
-    }
-
-    if (name.startsWith("config_")) {
-      const fieldName = name.replace("config_", "");
-      setFormData(prev => ({
-        ...prev,
-        configuracoes: {
-          ...prev.configuracoes,
-          [fieldName]: value
         }
       }));
       return;
@@ -317,25 +290,6 @@ export default function Settings() {
       }
     }
 
-    if (tabType === "seguranca") {
-      const { senhaAtual, novaSenha, confirmarSenha } = formData.seguranca;
-      
-      if (novaSenha && !senhaAtual) {
-        setCurrentError({ field: "seguranca_senhaAtual", message: "Senha atual é obrigatória para alterar senha." });
-        return false;
-      }
-
-      if (novaSenha && novaSenha.length < 6) {
-        setCurrentError({ field: "seguranca_novaSenha", message: "Nova senha deve ter pelo menos 6 caracteres." });
-        return false;
-      }
-
-      if (novaSenha && novaSenha !== confirmarSenha) {
-        setCurrentError({ field: "seguranca_confirmarSenha", message: "Senhas não coincidem." });
-        return false;
-      }
-    }
-
     return true;
   };
 
@@ -350,14 +304,40 @@ export default function Settings() {
     setCurrentError(null);
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { rua, numero, bairro, cidade, estado, pontoReferencia } = formData.enderecoDetalhado;
+
+      const dataToSend = {
+        nome_estabelecimento: formData.nomeEstabelecimento,
+        telefone: formData.telefone,
+        email: formData.email,
+        endereco: formData.endereco,
+        rua,
+        numero,
+        bairro,
+        cidade,
+        estado,
+        ponto_referencia: pontoReferencia,
+        dias_atendimento: formData.diasAtendimento,
+        horario_inicio: formData.horarioInicio,
+        horario_fim: formData.horarioFim,
+        descricao: formData.descricao,
+        logo: typeof formData.logo === 'string' ? formData.logo : null
+      };
+
+      const response = await api.post('/barbershops', dataToSend);
+      
+      // Atualizar context
+      if (response.data.barbershop) {
+        updateBarbershop(response.data.barbershop);
+      }
       
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
       
-      console.log("Dados salvos:", formData);
     } catch (error) {
-      setCurrentError({ field: "general", message: "Erro ao salvar configurações. Tente novamente." });
+      console.error('Erro ao salvar:', error);
+      const message = error.response?.data?.message || 'Erro ao salvar configurações';
+      setCurrentError({ field: "general", message });
     } finally {
       setIsLoading(false);
     }
@@ -395,6 +375,16 @@ export default function Settings() {
     { value: "Sábado", label: "Sáb", full: "Sábado" },
     { value: "Domingo", label: "Dom", full: "Domingo" }
   ];
+
+  if (loadingData) {
+    return (
+      <div className="settings-page">
+        <div className="container">
+          <div className="loading">Carregando configurações...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="settings-page">
@@ -646,141 +636,15 @@ export default function Settings() {
           )}
 
           {activeTab === "notificacoes" && (
-            <form onSubmit={handleSubmit} noValidate>
-              <div className="form-section">
-                <h3 className="form-section-title">
-                  <FiMail size={20} />
-                  Configurações de Email
-                </h3>
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label className="form-label" htmlFor="emailNotificacoes">
-                      Email para Notificações
-                    </label>
-                    <input
-                      type="email"
-                      id="emailNotificacoes"
-                      name="emailNotificacoes"
-                      className="form-input"
-                      placeholder="admin@suabarbearia.com"
-                      value={formData.emailNotificacoes}
-                      onChange={handleInputChange}
-                    />
-                    <small className="helper-text">
-                      Este email receberá todas as notificações automáticas
-                    </small>
-                  </div>
-                </div>
-              </div>
-
-              <div className="form-section">
-                <h3 className="form-section-title">
-                  <FiBell size={20} />
-                  Preferências de Notificações
-                </h3>
-                <p className="section-description">
-                  Configure quais eventos devem gerar notificações por email
-                </p>
-
-                <div className="notification-grid">
-                  <div className="notification-item">
-                    <div className="notification-content">
-                      <div className="notification-header">
-                        <h4>Novos Agendamentos</h4>
-                        <div className="notification-toggle">
-                          <input
-                            type="checkbox"
-                            id="novos-agendamentos"
-                            name="notificacao_novosAgendamentos"
-                            className="toggle-input"
-                            checked={formData.notificacoes.novosAgendamentos}
-                            onChange={handleInputChange}
-                          />
-                          <label htmlFor="novos-agendamentos" className="toggle-label"></label>
-                        </div>
-                      </div>
-                      <p>Receba notificação sempre que um cliente agendar um novo serviço</p>
-                    </div>
-                  </div>
-
-                  <div className="notification-item">
-                    <div className="notification-content">
-                      <div className="notification-header">
-                        <h4>Cancelamentos</h4>
-                        <div className="notification-toggle">
-                          <input
-                            type="checkbox"
-                            id="cancelamentos"
-                            name="notificacao_cancelamentos"
-                            className="toggle-input"
-                            checked={formData.notificacoes.cancelamentos}
-                            onChange={handleInputChange}
-                          />
-                          <label htmlFor="cancelamentos" className="toggle-label"></label>
-                        </div>
-                      </div>
-                      <p>Seja notificado quando um agendamento for cancelado pelo cliente</p>
-                    </div>
-                  </div>
-
-                  <div className="notification-item">
-                    <div className="notification-content">
-                      <div className="notification-header">
-                        <h4>Reagendamentos</h4>
-                        <div className="notification-toggle">
-                          <input
-                            type="checkbox"
-                            id="reagendamentos"
-                            name="notificacao_reagendamentos"
-                            className="toggle-input"
-                            checked={formData.notificacoes.reagendamentos}
-                            onChange={handleInputChange}
-                          />
-                          <label htmlFor="reagendamentos" className="toggle-label"></label>
-                        </div>
-                      </div>
-                      <p>Receba notificação quando um cliente remarcar um agendamento</p>
-                    </div>
-                  </div>
-
-                  <div className="notification-item">
-                    <div className="notification-content">
-                      <div className="notification-header">
-                        <h4>Lembretes</h4>
-                        <div className="notification-toggle">
-                          <input
-                            type="checkbox"
-                            id="lembretes"
-                            name="notificacao_lembretes"
-                            className="toggle-input"
-                            checked={formData.notificacoes.lembretes}
-                            onChange={handleInputChange}
-                          />
-                          <label htmlFor="lembretes" className="toggle-label"></label>
-                        </div>
-                      </div>
-                      <p>Receba lembretes sobre agendamentos próximos e tarefas pendentes</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="form-actions">
-                <button type="submit" className="save-button" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <div className="loading-spinner" />
-                      Salvando...
-                    </>
-                  ) : (
-                    <>
-                      <FiSave size={20} />
-                      Salvar Preferências
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
+            <div className="form-section">
+              <h3 className="form-section-title">
+                <FiBell size={20} />
+                Configurações de Notificações
+              </h3>
+              <p className="section-description">
+                Em breve você poderá configurar suas preferências de notificações
+              </p>
+            </div>
           )}
 
           {showSuccess && (

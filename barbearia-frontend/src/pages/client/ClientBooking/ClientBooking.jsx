@@ -13,6 +13,7 @@ import {
   FiStar,
   FiInfo
 } from 'react-icons/fi';
+import './ClientBooking.css';
 
 const ClientBooking = () => {
   const [currentStep, setCurrentStep] = useState(1);

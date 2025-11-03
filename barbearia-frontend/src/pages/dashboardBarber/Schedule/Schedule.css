@@ -1,4 +1,4 @@
-/* Agenda.css */
+/* Schedule.css */
 
 :root {
   --primary-blue: #3b82f6;
@@ -28,7 +28,7 @@
 /* Container principal com altura total da viewport e scroll único */
 .barber-schedule {
   height: 100vh;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  background: linear-gradient(135deg, #000203 0%, #e2e8f0 100%);
   padding: 1rem 1.5rem;
   margin-left: var(--sidebar-width);
   width: calc(100% - var(--sidebar-width));
@@ -367,7 +367,7 @@ body:not(.light-mode) .current-period {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  min-height: 0; /* para flexbox respeitar altura */
+  min-height: 0;
 }
 
 body:not(.light-mode) .calendar-container {
@@ -408,7 +408,7 @@ body:not(.light-mode) .weekday-header {
   grid-template-columns: repeat(7, 1fr);
   flex: 1 1 auto;
   grid-template-rows: repeat(6, 1fr);
-  min-height: 0; /* para flexbox respeitar altura */
+  min-height: 0;
   overflow-y: auto;
   scroll-behavior: smooth;
 }

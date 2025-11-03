@@ -1,3 +1,5 @@
+/* Setting CSS */
+
 :root {
   --dark-blue: #3b82f6;
   --sidebar-width: 16rem;
@@ -1067,7 +1069,6 @@ body:not(.light-mode) .modal-body::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
 }
 
-/* Print styles */
 @media print {
   .settings-page {
     margin-left: 0;

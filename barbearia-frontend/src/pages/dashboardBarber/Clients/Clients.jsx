@@ -1,124 +1,44 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   FiSearch, 
   FiPlus, 
   FiUser, 
   FiCalendar, 
-  FiDollarSign, 
   FiUsers,
   FiPhone,
   FiMail,
   FiMapPin,
   FiEdit2,
   FiTrash2,
-  FiEye,
-  FiEyeOff,
-  FiFilter,
-  FiDownload,
   FiTrendingUp,
-  FiClock,
-  FiScissors,
   FiStar,
-  FiX
+  FiX,
+  FiScissors,
+  FiClock
 } from 'react-icons/fi';
 import './Clients.css';
+import { useClients } from '../../../hooks/useClients';	
 
 const Clients = () => {
-  const [clients, setClients] = useState([
-    {
-      id: 1,
-      name: 'João Silva',
-      phone: '(11) 99999-9999',
-      email: 'joao.silva@email.com',
-      address: 'Rua das Flores, 123',
-      registrationDate: '2024-01-15',
-      totalSpent: 450.00,
-      visits: 15,
-      lastVisit: '2024-08-15',
-      preferredService: 'Corte + Barba',
-      rating: 5,
-      status: 'ativo'
-    },
-    {
-      id: 2,
-      name: 'Carlos Santos',
-      phone: '(11) 88888-8888',
-      email: 'carlos.santos@email.com',
-      address: 'Av. Principal, 456',
-      registrationDate: '2024-07-20',
-      totalSpent: 180.00,
-      visits: 6,
-      lastVisit: '2024-08-10',
-      preferredService: 'Corte',
-      rating: 4,
-      status: 'ativo'
-    },
-    {
-      id: 3,
-      name: 'Pedro Oliveira',
-      phone: '(11) 77777-7777',
-      email: 'pedro.oliveira@email.com',
-      address: 'Rua da Paz, 789',
-      registrationDate: '2024-06-10',
-      totalSpent: 320.00,
-      visits: 10,
-      lastVisit: '2024-08-12',
-      preferredService: 'Barba',
-      rating: 5,
-      status: 'ativo'
-    },
-    {
-      id: 4,
-      name: 'Rafael Costa',
-      phone: '(11) 66666-6666',
-      email: 'rafael.costa@email.com',
-      address: 'Alameda Santos, 321',
-      registrationDate: '2024-07-25',
-      totalSpent: 90.00,
-      visits: 3,
-      lastVisit: '2024-07-30',
-      preferredService: 'Corte',
-      rating: 3,
-      status: 'inativo'
-    },
-    {
-      id: 5,
-      name: 'Marcos Lima',
-      phone: '(11) 55555-5555',
-      email: 'marcos.lima@email.com',
-      address: 'Rua Central, 654',
-      registrationDate: '2024-08-01',
-      totalSpent: 220.00,
-      visits: 7,
-      lastVisit: '2024-08-14',
-      preferredService: 'Corte + Barba',
-      rating: 4,
-      status: 'ativo'
-    },
-    {
-      id: 6,
-      name: 'André Ferreira',
-      phone: '(11) 44444-4444',
-      email: 'andre.ferreira@email.com',
-      address: 'Praça da República, 987',
-      registrationDate: '2024-05-18',
-      totalSpent: 540.00,
-      visits: 18,
-      lastVisit: '2024-08-13',
-      preferredService: 'Corte + Barba',
-      rating: 5,
-      status: 'ativo'
-    }
-  ]);
+  const { 
+    clients, 
+    loading, 
+    error, 
+    createClient, 
+    updateClient, 
+    deleteClient,
+    getClientHistory 
+  } = useClients();
 
+  const [showModal, setShowModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [clientHistory, setClientHistory] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showValues, setShowValues] = useState(true);
   const [filterStatus, setFilterStatus] = useState('todos');
   const [sortBy, setSortBy] = useState('name');
-  const [showModal, setShowModal] = useState(false);
-  const [showReportModal, setShowReportModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedClient, setSelectedClient] = useState(null);
+  const [showValues, setShowValues] = useState(true);
   const [newClient, setNewClient] = useState({
     name: '',
     phone: '',
@@ -126,79 +46,68 @@ const Clients = () => {
     address: ''
   });
 
-  // Dados de serviços expandidos
-  const clientServices = {
-    1: [
-      { id: 1, service: 'Corte + Barba', date: '2024-08-15', value: 55.00, barber: 'João', duration: 45 },
-      { id: 2, service: 'Corte', date: '2024-08-01', value: 35.00, barber: 'Carlos', duration: 30 },
-      { id: 3, service: 'Barba', date: '2024-07-20', value: 25.00, barber: 'João', duration: 20 },
-      { id: 4, service: 'Corte + Barba', date: '2024-07-05', value: 55.00, barber: 'Pedro', duration: 45 }
-    ],
-    2: [
-      { id: 1, service: 'Corte', date: '2024-08-10', value: 35.00, barber: 'Carlos', duration: 30 },
-      { id: 2, service: 'Barba', date: '2024-07-25', value: 25.00, barber: 'João', duration: 20 }
-    ],
-    3: [
-      { id: 1, service: 'Barba', date: '2024-08-12', value: 25.00, barber: 'Pedro', duration: 20 },
-      { id: 2, service: 'Corte + Barba', date: '2024-07-28', value: 55.00, barber: 'João', duration: 45 },
-      { id: 3, service: 'Sobrancelha', date: '2024-07-10', value: 15.00, barber: 'Ana', duration: 15 }
-    ],
-    4: [
-      { id: 1, service: 'Corte', date: '2024-07-30', value: 35.00, barber: 'Carlos', duration: 30 }
-    ],
-    5: [
-      { id: 1, service: 'Corte + Barba', date: '2024-08-14', value: 55.00, barber: 'João', duration: 45 },
-      { id: 2, service: 'Corte', date: '2024-08-01', value: 35.00, barber: 'Pedro', duration: 30 }
-    ],
-    6: [
-      { id: 1, service: 'Corte + Barba', date: '2024-08-13', value: 55.00, barber: 'João', duration: 45 },
-      { id: 2, service: 'Corte + Barba', date: '2024-07-30', value: 55.00, barber: 'Carlos', duration: 45 },
-      { id: 3, service: 'Barba', date: '2024-07-15', value: 25.00, barber: 'Pedro', duration: 20 }
-    ]
-  };
+  // Proteções contra undefined
+  const safeClients = clients || [];
 
-  // Calcular estatísticas avançadas
-  const totalClients = clients.length;
-  const activeClients = clients.filter(client => client.status === 'ativo').length;
+  // Calcular estatísticas
+  const totalClients = safeClients.length;
+  const activeClients = safeClients.filter(client => 
+    client && (client.status || '').toLowerCase() === 'ativo'
+  ).length;
   
   const currentDate = new Date();
   const oneMonthAgo = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, currentDate.getDate());
-  const newClientsThisMonth = clients.filter(client => {
-    const clientDate = new Date(client.registrationDate);
+  const newClientsThisMonth = safeClients.filter(client => {
+    const dateStr = client && client.registrationDate;
+    if (!dateStr) return false;
+    const clientDate = new Date(dateStr);
     return clientDate >= oneMonthAgo;
   }).length;
 
-  const totalRevenue = clients.reduce((acc, client) => acc + client.totalSpent, 0);
-  const averageSpent = totalRevenue / clients.length || 0;
-  const averageVisits = clients.reduce((acc, client) => acc + client.visits, 0) / clients.length || 0;
-  const averageRating = clients.reduce((acc, client) => acc + client.rating, 0) / clients.length || 0;
+  const totalRevenue = safeClients.reduce((acc, client) => {
+    const val = Number((client && client.totalSpent) || 0);
+    return acc + val;
+  }, 0);
 
-  const topClients = [...clients]
-    .sort((a, b) => b.totalSpent - a.totalSpent)
+  const averageSpent = totalClients > 0 ? totalRevenue / totalClients : 0;
+  const averageVisits = totalClients > 0 ? safeClients.reduce((acc, client) => acc + Number((client && client.visits) || 0), 0) / totalClients : 0;
+  const averageRating = totalClients > 0 ? safeClients.reduce((acc, client) => acc + Number((client && client.rating) || 0), 0) / totalClients : 0;
+
+  const topClients = [...safeClients]
+    .sort((a, b) => (Number(b && b.totalSpent) || 0) - (Number(a && a.totalSpent) || 0))
     .slice(0, 3);
 
   // Filtros e ordenação
   const getFilteredAndSortedClients = () => {
-    let filtered = clients.filter(client => {
-      const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           client.phone.includes(searchTerm) ||
-                           client.email.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = filterStatus === 'todos' || client.status === filterStatus;
+    const searchLower = (searchTerm || '').toLowerCase();
+
+    let filtered = safeClients.filter(client => {
+      const name = (client && client.name) ? String(client.name).toLowerCase() : '';
+      const email = (client && client.email) ? String(client.email).toLowerCase() : '';
+      const phone = (client && client.phone) ? String(client.phone) : '';
+
+      const matchesSearch =
+        (searchLower && (name.includes(searchLower) || email.includes(searchLower) || phone.includes(searchTerm))) ||
+        (!searchLower);
+
+      const statusNormalized = (client && client.status) ? String(client.status).toLowerCase() : '';
+      const matchesStatus = filterStatus === 'todos' || statusNormalized === filterStatus.toLowerCase();
+
       return matchesSearch && matchesStatus;
     });
 
     return filtered.sort((a, b) => {
       switch (sortBy) {
         case 'name':
-          return a.name.localeCompare(b.name);
+          return (String(a && a.name || '')).localeCompare(String(b && b.name || ''));
         case 'date':
-          return new Date(b.registrationDate) - new Date(a.registrationDate);
+          return new Date(b && b.registrationDate) - new Date(a && a.registrationDate);
         case 'spent':
-          return b.totalSpent - a.totalSpent;
+          return (Number(b && b.totalSpent) || 0) - (Number(a && a.totalSpent) || 0);
         case 'visits':
-          return b.visits - a.visits;
+          return (Number(b && b.visits) || 0) - (Number(a && a.visits) || 0);
         case 'rating':
-          return b.rating - a.rating;
+          return (Number(b && b.rating) || 0) - (Number(a && a.rating) || 0);
         default:
           return 0;
       }
@@ -207,91 +116,118 @@ const Clients = () => {
 
   const filteredClients = getFilteredAndSortedClients();
 
-  const handleAddClient = () => {
+  const handleAddClient = async () => {
     if (newClient.name && newClient.phone) {
-      const client = {
-        id: Math.max(...clients.map(c => c.id)) + 1,
-        name: newClient.name,
-        phone: newClient.phone,
-        email: newClient.email || '',
-        address: newClient.address || '',
-        registrationDate: new Date().toISOString().split('T')[0],
-        totalSpent: 0,
-        visits: 0,
-        lastVisit: null,
-        preferredService: '',
-        rating: 5,
-        status: 'ativo'
-      };
-      setClients([...clients, client]);
-      setNewClient({ name: '', phone: '', email: '', address: '' });
-      setShowModal(false);
+      try {
+        await createClient(newClient);
+        setNewClient({ name: '', phone: '', email: '', address: '' });
+        setShowModal(false);
+        alert('Cliente cadastrado com sucesso!');
+      } catch (error) {
+        alert(error.message);
+      }
     }
   };
 
-  const handleEditClient = () => {
+  const handleEditClient = async () => {
     if (selectedClient && newClient.name && newClient.phone) {
-      const updatedClients = clients.map(client =>
-        client.id === selectedClient.id
-          ? { ...client, ...newClient }
-          : client
-      );
-      setClients(updatedClients);
-      setShowEditModal(false);
-      setSelectedClient(null);
-      setNewClient({ name: '', phone: '', email: '', address: '' });
+      try {
+        await updateClient(selectedClient.id, newClient);
+        setShowEditModal(false);
+        setSelectedClient(null);
+        setNewClient({ name: '', phone: '', email: '', address: '' });
+        alert('Cliente atualizado com sucesso!');
+      } catch (error) {
+        alert(error.message);
+      }
     }
   };
 
-  const handleDeleteClient = (clientId) => {
+  const handleDeleteClient = async (clientId) => {
     if (window.confirm('Tem certeza que deseja excluir este cliente?')) {
-      setClients(clients.filter(client => client.id !== clientId));
+      try {
+        await deleteClient(clientId);
+        alert('Cliente deletado com sucesso!');
+      } catch (error) {
+        alert(error.message);
+      }
     }
   };
 
-  const handleClientClick = (client) => {
+  const handleClientClick = async (client) => {
     setSelectedClient(client);
+    try {
+      const history = await getClientHistory(client.id);
+      setClientHistory(history);
+    } catch (error) {
+      console.error('Erro ao buscar histórico:', error);
+      setClientHistory([]);
+    }
     setShowReportModal(true);
   };
 
   const handleEditClick = (client, e) => {
-    e.stopPropagation();
+    if (e && e.stopPropagation) e.stopPropagation();
     setSelectedClient(client);
     setNewClient({
-      name: client.name,
-      phone: client.phone,
-      email: client.email || '',
-      address: client.address || ''
+      name: client && client.name ? client.name : '',
+      phone: client && client.phone ? client.phone : '',
+      email: client && client.email ? client.email : '',
+      address: client && client.address ? client.address : ''
     });
     setShowEditModal(true);
   };
 
   const formatCurrency = (value) => {
     if (!showValues) return '***';
+    const val = Number(value) || 0;
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
-    }).format(value);
+    }).format(val);
   };
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Nunca';
-    return new Date(dateString).toLocaleDateString('pt-BR');
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return 'Nunca';
+    return d.toLocaleDateString('pt-BR');
   };
 
   const getStatusBadge = (status) => {
-    return status === 'ativo' ? 'status-active' : 'status-inactive';
+    return (status && status.toLowerCase() === 'ativo') ? 'status-active' : 'status-inactive';
   };
 
   const renderStars = (rating) => {
+    const r = Math.max(0, Math.min(5, Number(rating) || 0));
     return Array.from({ length: 5 }, (_, i) => (
       <FiStar
         key={i}
         size={16}
-        className={i < rating ? 'star-filled' : 'star-empty'}
+        className={i < r ? 'star-filled' : 'star-empty'}
       />
     ));
   };
+
+  if (loading) {
+    return (
+      <div className="clients-page">
+        <div className="container">
+          <div className="loading">Carregando clientes...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="clients-page">
+        <div className="container">
+          <div className="error">Erro: {error}</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="clients-page">
@@ -310,7 +246,7 @@ const Clients = () => {
             <div className="stat-card-content">
               <div>
                 <p>Total de Clientes</p>
-                <p className="stat-number total">{formatCurrency ? totalClients : '***'}</p>
+                <p className="stat-number total">{totalClients}</p>
                 <div className="stat-change neutral">
                   <FiUsers size={16} />
                   <span>{activeClients} ativos</span>
@@ -329,7 +265,9 @@ const Clients = () => {
                 <p className="stat-number new">{newClientsThisMonth}</p>
                 <div className="stat-change positive">
                   <FiTrendingUp size={16} />
-                  <span>+{Math.round((newClientsThisMonth / totalClients) * 100)}% da base</span>
+                  <span>
+                    { totalClients > 0 ? `+${Math.round((newClientsThisMonth / totalClients) * 100)}% da base` : '+' }
+                  </span>
                 </div>
               </div>
               <div className="stat-icon green">
@@ -411,18 +349,18 @@ const Clients = () => {
           </div>
           <div className="top-clients-grid">
             {topClients.map((client, index) => (
-              <div key={client.id} className={`top-client-card rank-${index + 1}`}>
+              <div key={client && client.id ? client.id : index} className={`top-client-card rank-${index + 1}`}>
                 <div className="rank-badge">{index + 1}º</div>
                 <div className="client-avatar">
                   <FiUser size={20} />
                 </div>
                 <div className="top-client-info">
-                  <h4>{client.name}</h4>
-                  <p className="top-client-spent">{formatCurrency(client.totalSpent)}</p>
+                  <h4>{(client && client.name) || '—'}</h4>
+                  <p className="top-client-spent">{formatCurrency(client && client.totalSpent)}</p>
                   <div className="top-client-stats">
-                    <span>{client.visits} visitas</span>
+                    <span>{(client && client.visits) || 0} visitas</span>
                     <div className="rating-stars">
-                      {renderStars(client.rating)}
+                      {renderStars(client && client.rating)}
                     </div>
                   </div>
                 </div>
@@ -454,7 +392,7 @@ const Clients = () => {
             ) : (
               filteredClients.map((client) => (
                 <div 
-                  key={client.id} 
+                  key={client && client.id ? client.id : Math.random()}
                   className="client-item"
                   onClick={() => handleClientClick(client)}
                 >
@@ -465,18 +403,18 @@ const Clients = () => {
                       </div>
                       <div className="client-info">
                         <div className="client-name-row">
-                          <h3>{client.name}</h3>
-                          <span className={`status-badge ${getStatusBadge(client.status)}`}>
-                            {client.status}
+                          <h3>{(client && client.name) || '—'}</h3>
+                          <span className={`status-badge ${getStatusBadge(client && client.status)}`}>
+                            {(client && client.status) || '—'}
                           </span>
                         </div>
                         <div className="client-contact">
-                          <span><FiPhone size={14} /> {client.phone}</span>
-                          {client.email && <span><FiMail size={14} /> {client.email}</span>}
+                          <span><FiPhone size={14} /> {(client && client.phone) || '—'}</span>
+                          {(client && client.email) && <span><FiMail size={14} /> {client.email}</span>}
                         </div>
                         <div className="client-meta">
-                          <span>Cadastrado: {formatDate(client.registrationDate)}</span>
-                          <span>Última visita: {formatDate(client.lastVisit)}</span>
+                          <span>Cadastrado: {formatDate(client && client.registrationDate)}</span>
+                          <span>Última visita: {formatDate(client && client.lastVisit)}</span>
                         </div>
                       </div>
                     </div>
@@ -485,17 +423,17 @@ const Clients = () => {
                       <div className="client-stats">
                         <div className="stat-item">
                           <span className="stat-label">Total Gasto</span>
-                          <span className="stat-value primary">{formatCurrency(client.totalSpent)}</span>
+                          <span className="stat-value primary">{formatCurrency(client && client.totalSpent)}</span>
                         </div>
                         <div className="stat-item">
                           <span className="stat-label">Visitas</span>
-                          <span className="stat-value">{client.visits}</span>
+                          <span className="stat-value">{(client && client.visits) || 0}</span>
                         </div>
                         <div className="stat-item">
                           <span className="stat-label">Avaliação</span>
                           <div className="rating-display">
-                            {renderStars(client.rating)}
-                            <span className="rating-number">({client.rating})</span>
+                            {renderStars(client && client.rating)}
+                            <span className="rating-number">({(client && client.rating) || 0})</span>
                           </div>
                         </div>
                       </div>
@@ -510,7 +448,7 @@ const Clients = () => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDeleteClient(client.id);
+                            handleDeleteClient(client && client.id);
                           }}
                           className="action-button delete"
                           title="Excluir cliente"
@@ -714,35 +652,35 @@ const Clients = () => {
                     <FiUser size={32} />
                   </div>
                   <div className="profile-info">
-                    <h3>{selectedClient.name}</h3>
+                    <h3>{selectedClient && selectedClient.name}</h3>
                     <div className="profile-details">
-                      <span><FiPhone size={14} /> {selectedClient.phone}</span>
-                      {selectedClient.email && <span><FiMail size={14} /> {selectedClient.email}</span>}
-                      {selectedClient.address && <span><FiMapPin size={14} /> {selectedClient.address}</span>}
+                      <span><FiPhone size={14} /> {selectedClient && selectedClient.phone}</span>
+                      {selectedClient && selectedClient.email && <span><FiMail size={14} /> {selectedClient.email}</span>}
+                      {selectedClient && selectedClient.address && <span><FiMapPin size={14} /> {selectedClient.address}</span>}
                     </div>
                   </div>
-                  <span className={`status-badge ${getStatusBadge(selectedClient.status)}`}>
-                    {selectedClient.status}
+                  <span className={`status-badge ${getStatusBadge(selectedClient && selectedClient.status)}`}>
+                    {selectedClient && selectedClient.status}
                   </span>
                 </div>
 
                 <div className="profile-stats">
                   <div className="profile-stat">
-                    <span className="stat-number">{formatCurrency(selectedClient.totalSpent)}</span>
+                    <span className="stat-number">{formatCurrency(selectedClient && selectedClient.totalSpent)}</span>
                     <span className="stat-label">Total Gasto</span>
                   </div>
                   <div className="profile-stat">
-                    <span className="stat-number">{selectedClient.visits}</span>
+                    <span className="stat-number">{(selectedClient && selectedClient.visits) || 0}</span>
                     <span className="stat-label">Visitas</span>
                   </div>
                   <div className="profile-stat">
                     <div className="rating-display">
-                      {renderStars(selectedClient.rating)}
+                      {renderStars(selectedClient && selectedClient.rating)}
                     </div>
                     <span className="stat-label">Avaliação</span>
                   </div>
                   <div className="profile-stat">
-                    <span className="stat-number">{formatDate(selectedClient.lastVisit)}</span>
+                    <span className="stat-number">{formatDate(selectedClient && selectedClient.lastVisit)}</span>
                     <span className="stat-label">Última Visita</span>
                   </div>
                 </div>
@@ -762,9 +700,9 @@ const Clients = () => {
                   <div>Valor</div>
                 </div>
                 
-                {clientServices[selectedClient.id] && clientServices[selectedClient.id].length > 0 ? (
-                  clientServices[selectedClient.id].map((service) => (
-                    <div key={service.id} className="table-row">
+                {clientHistory && clientHistory.length > 0 ? (
+                  clientHistory.map((service, index) => (
+                    <div key={index} className="table-row">
                       <div className="service-name">
                         <FiScissors size={16} />
                         {service.service}

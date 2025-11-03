@@ -1,8 +1,4 @@
-/* ========================================
-   HomePage.css - Cliente
-   Reutiliza variáveis do dashboard mas isolado
-======================================== */
-
+/* ClientHome.css */
 :root {
   --dark-blue: #3b82f6;
   --light-blue: #60a5fa;
@@ -13,9 +9,7 @@
   font-family: "Inter", sans-serif;
 }
 
-/* ========================================
-   CONTAINER PRINCIPAL
-======================================== */
+/* MAIN CONTAINER */
 .home-page {
   min-height: 100vh;
   background-color: #f4f4f4;
@@ -44,9 +38,7 @@ body:not(.light-mode) .home-page {
   width: 100%;
 }
 
-/* ========================================
-   HEADER
-======================================== */
+/* HEADER */
 .home-page .header {
   margin-bottom: 2rem;
   display: flex;
@@ -110,9 +102,7 @@ body:not(.light-mode) .home-page .notification-btn:hover {
   color: #d1d5db;
 }
 
-/* ========================================
-   BARRA DE BUSCA
-======================================== */
+/* SEARCH BAR */
 .home-page .search-container {
   margin-bottom: 2rem;
 }
@@ -177,9 +167,7 @@ body:not(.light-mode) .home-page .search-input::placeholder {
   color: #6b7280;
 }
 
-/* ========================================
-   CONTEÚDO PRINCIPAL
-======================================== */
+/* MAIN */
 .home-page .main-content {
   width: 100%;
 }
@@ -195,9 +183,7 @@ body:not(.light-mode) .home-page .section-title {
   color: white;
 }
 
-/* ========================================
-   LISTA DE BARBEARIAS
-======================================== */
+/* LIST BARBERSHOPS */
 .home-page .barbershop-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -308,9 +294,7 @@ body:not(.light-mode) .home-page .distance {
   color: #9ca3af;
 }
 
-/* ========================================
-   RESPONSIVIDADE
-======================================== */
+/* RESPONSIVE */
 @media (max-width: 1200px) {
   .home-page .barbershop-list {
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -367,9 +351,7 @@ body:not(.light-mode) .home-page .distance {
   }
 }
 
-/* ========================================
-   ANIMAÇÕES
-======================================== */
+/* ANIMATIONS */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -381,9 +363,6 @@ body:not(.light-mode) .home-page .distance {
   }
 }
 
-/* ========================================
-   ACESSIBILIDADE
-======================================== */
 .home-page button:focus,
 .home-page .barbershop-card:focus {
   outline: 2px solid var(--dark-blue);

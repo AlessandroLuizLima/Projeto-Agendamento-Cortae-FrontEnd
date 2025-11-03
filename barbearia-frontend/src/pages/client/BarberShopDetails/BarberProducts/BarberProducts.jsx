@@ -2,7 +2,6 @@
 import React from 'react';
 import { IoBag } from 'react-icons/io5';
 import { FiShoppingCart } from 'react-icons/fi';
-import './BarberProducts.css';
 
 const BarberProducts = ({ products = [], onAddToCart }) => {
   

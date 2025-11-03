@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
-import './LandingPage.css'; 
+import React, { useState, useCallback } from 'react';
+import './LandingPage.css';
 import { useNavigate } from 'react-router-dom';
 import Logo from '../../assets/imagens/logo.png';
 import { FaCalendarAlt, FaUsers, FaChartLine, FaMobileAlt, FaClock, FaChartBar } from 'react-icons/fa';
 
 function Button(props) {
   return (
-    <button 
+    <button
       type={props.type || "button"}
       className={props.className}
       onClick={props.onClick}
       aria-label={props.ariaLabel}
+      disabled={props.disabled}
     >
       {props.children}
     </button>
@@ -29,10 +30,11 @@ function NavLink(props) {
 
 function MobileMenuButton(props) {
   return (
-    <button 
+    <button
       onClick={props.onClick}
       className="mobile-menu-btn"
-      aria-label="Open menu"
+      aria-label="Abrir menu"
+      aria-expanded={props.isOpen}
     >
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -48,23 +50,26 @@ function Navbar(props) {
         <a href="#home" className="logo">
           <img src={props.logo} alt="Logo Cortaê" />
         </a>
-        
         <div className="nav-buttons">
           <Button 
-            className="btn-outline"
+            className="btn-outline" 
             onClick={props.onNavigateCliente}
+            ariaLabel="Acessar área do cliente"
           >
             Área do Cliente
           </Button>
           <Button 
             className="btn-outline" 
             onClick={props.onNavigateBarbeiro}
+            ariaLabel="Acessar área do barbeiro"
           >
             Área do Barbeiro
           </Button>
-          <MobileMenuButton onClick={props.onToggleMenu} />
+          <MobileMenuButton 
+            onClick={props.onToggleMenu} 
+            isOpen={props.mobileMenuOpen}
+          />
         </div>
-        
         <div className={`nav-menu ${props.mobileMenuOpen ? 'open' : ''}`}>
           <ul className="nav-list">
             <NavLink href="#home" text="Início" />
@@ -84,9 +89,9 @@ function HeroSection(props) {
       <div className="container hero-section">
         <h1 className="hero-title">
           {props.titlePart1}<br />
-          {props.titlePart2} <span className="text-blue">{props.titleHighlight}</span>
+          {props.titlePart2}{' '}
+          <span className="text-blue">{props.titleHighlight}</span>
         </h1>
-        
         <p className="hero-subtitle">
           {props.subtitle}
         </p>
@@ -143,10 +148,9 @@ function ServicesSection(props) {
           <SectionTitle text={props.title} />
           <p className="hero-subtitle">{props.description}</p>
         </div>
-        
         <div className="services-grid">
           {props.services.map((service, index) => (
-            <ServiceCard 
+            <ServiceCard
               key={index}
               icon={service.icon}
               title={service.title}
@@ -184,7 +188,9 @@ function PricingCard(props) {
           <PlanFeature key={index} text={feature} />
         ))}
       </ul>
-      <Button className="btn-outline">Adquirir</Button>
+      <Button className="btn-outline" ariaLabel={`Adquirir plano ${props.name}`}>
+        Adquirir
+      </Button>
     </div>
   );
 }
@@ -197,10 +203,9 @@ function PricingSection(props) {
           <SectionTitle text={props.title} />
           <p className="contact-intro">{props.description}</p>
         </div>
-        
         <div className="pricing-grid">
           {props.plans.map((plan, index) => (
-            <PricingCard 
+            <PricingCard
               key={index}
               name={plan.name}
               description={plan.description}
@@ -221,12 +226,15 @@ function FormInput(props) {
       <label htmlFor={props.id} className="form-label">
         {props.label}
       </label>
-      <input 
+      <input
         type={props.type}
         id={props.id}
+        name={props.name}
         className="form-input"
         placeholder={props.placeholder}
         required={props.required}
+        value={props.value}
+        onChange={props.onChange}
       />
     </div>
   );
@@ -238,11 +246,14 @@ function FormTextarea(props) {
       <label htmlFor={props.id} className="form-label">
         {props.label}
       </label>
-      <textarea 
+      <textarea
         id={props.id}
+        name={props.name}
         className="form-textarea"
         placeholder={props.placeholder}
         required={props.required}
+        value={props.value}
+        onChange={props.onChange}
       ></textarea>
     </div>
   );
@@ -255,25 +266,34 @@ function ContactSection(props) {
         <SectionTitle text={props.title} centered={true} />
         <p className="contact-intro">{props.description}</p>
         <form onSubmit={props.onSubmit} className="contact-form">
-          <FormInput 
+          <FormInput
             type="email"
             id="email"
+            name="email"
             label="Seu e-mail"
             placeholder="exemplo@gmail.com"
             required={true}
+            value={props.formData.email}
+            onChange={props.onChange}
           />
-          <FormInput 
+          <FormInput
             type="text"
             id="subject"
+            name="subject"
             label="Assunto"
             placeholder="Deixe-nos saber como podemos ajudar você"
             required={true}
+            value={props.formData.subject}
+            onChange={props.onChange}
           />
-          <FormTextarea 
+          <FormTextarea
             id="message"
+            name="message"
             label="Sua mensagem"
             placeholder="Deixe sua mensagem"
             required={true}
+            value={props.formData.message}
+            onChange={props.onChange}
           />
           <Button type="submit" className="btn-outline">
             Enviar
@@ -308,22 +328,16 @@ function Footer(props) {
         <div className="footer-content">
           <div className="footer-section">
             <a href="#" className="footer-logo">
-              <img src={props.logo} alt="logo" />
+              <img src={props.logo} alt="Logo Cortaê" />
             </a>
           </div>
           <div className="footer-links">
             {props.sections.map((section, index) => (
-              <FooterSection 
-                key={index}
-                title={section.title}
-                links={section.links}
-              />
+              <FooterSection key={index} title={section.title} links={section.links} />
             ))}
           </div>
         </div>
-        
         <hr className="footer-divider" />
-        
         <div className="footer-bottom">
           <span className="footer-copyright">{props.copyright}</span>
         </div>
@@ -334,26 +348,49 @@ function Footer(props) {
 
 const LandingPage = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    email: '',
+    subject: '',
+    message: ''
+  });
+  
   const navigate = useNavigate();
 
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
-  };
+  const toggleMobileMenu = useCallback(() => {
+    setMobileMenuOpen(prev => !prev);
+  }, []);
 
-  // Navega para página de auth do CLIENTE
-  const handleNavigateCliente = () => {
-    navigate('/auth/cliente');
-  };
+  // CORREÇÃO: Navegação para área do cliente com hash correto
+  const handleNavigateCliente = useCallback(() => {
+    console.log('Navegando para área do cliente com hash: c1a2b3');
+    navigate('/login?auth=c1a2b3');
+  }, [navigate]);
 
-  // Navega para página de auth do BARBEIRO
-  const handleNavigateBarbeiro = () => {
-    navigate('/auth/barbeiro');
-  };
+  // CORREÇÃO: Navegação para área do barbeiro com hash correto
+  const handleNavigateBarbeiro = useCallback(() => {
+    console.log('Navegando para área do barbeiro com hash: b4r5b6');
+    navigate('/login?auth=b4r5b6');
+  }, [navigate]);
 
-  const handleSubmit = (e) => {
+  const handleFormChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  }, []);
+
+  const handleSubmit = useCallback((e) => {
     e.preventDefault();
-    alert('Formulário enviado com sucesso!');
-  };
+    console.log('Formulário enviado:', formData);
+    alert('Formulário enviado com sucesso! Entraremos em contato em breve.');
+    // Limpar formulário
+    setFormData({
+      email: '',
+      subject: '',
+      message: ''
+    });
+  }, [formData]);
 
   const services = [
     {
@@ -455,48 +492,44 @@ const LandingPage = () => {
 
   return (
     <div className="cortae">
-      <Navbar 
+      <Navbar
         logo={Logo}
         mobileMenuOpen={mobileMenuOpen}
         onToggleMenu={toggleMobileMenu}
         onNavigateCliente={handleNavigateCliente}
         onNavigateBarbeiro={handleNavigateBarbeiro}
       />
-
-      <HeroSection 
+      <HeroSection
         titlePart1="Transforme sua barbearia"
         titlePart2="em um"
         titleHighlight="negócio digital"
         subtitle="Gerencie agendamentos, fidelize clientes e aumente seu faturamento. Mais organização, menos trabalho manual."
       />
-
-      <AboutSection 
+      <AboutSection
         label="Sobre nós"
         title="A solução completa para modernizar sua barbearia"
         paragraph1="O Cortaê nasceu da necessidade real de profissionais da beleza que buscavam uma forma simples e eficiente de gerenciar seus negócios. Sabemos que seu tempo é valioso e deve ser dedicado ao que você faz de melhor: atender seus clientes."
         paragraph2="Nossa plataforma elimina a papelada, reduz os 'furos' de agenda e ajuda você a construir um relacionamento duradouro com seus clientes. Com o Cortaê, você tem controle total do seu negócio na palma da mão."
       />
-
-      <ServicesSection 
+      <ServicesSection
         label="Nossos serviços"
         title="Tudo que você precisa para crescer"
         description="Ferramentas profissionais que simplificam sua rotina e impressionam seus clientes. Tenha o controle total do seu negócio em uma única plataforma."
         services={services}
       />
-
-      <PricingSection 
+      <PricingSection
         title="Escolha o plano ideal para seu negócio"
         description="Todos os planos incluem 14 dias de teste grátis. Sem compromisso, cancele quando quiser. Oferecemos opções flexíveis que se ajustam ao seu orçamento e objetivos de crescimento."
         plans={plans}
       />
-
-      <ContactSection 
+      <ContactSection
         title="Entre em contato"
         description="Tem dúvidas sobre nossos serviços? Precisa de mais detalhes sobre nossos planos? Nossa equipe está pronta para ajudar você a transformar sua barbearia. Responderemos em até 24 horas."
         onSubmit={handleSubmit}
+        formData={formData}
+        onChange={handleFormChange}
       />
-
-      <Footer 
+      <Footer
         logo={Logo}
         sections={footerSections}
         copyright="© 2025 Cortaê. Todos os Direitos Reservados."

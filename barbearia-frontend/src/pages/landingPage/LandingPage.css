@@ -1,3 +1,5 @@
+/* Landing Page */
+
 *,
 *::before,
 *::after {
@@ -287,7 +289,7 @@ body {
   color: #9ca3af;
 }
 
-/* Pricing Section - MELHORADA */
+/* Pricing Section */
 .pricing-section {
   padding: 4rem 1rem;
   text-align: center;

@@ -17,13 +17,13 @@
     animation: fadeIn 0.2s ease-out;
   }
   
-  /* Container - LARGURA AUMENTADA */
+  /* Container */
   .schedule-modal-container {
     background: #1f2937;
     border: 1px solid #374151;
     border-radius: 1rem;
     width: 100%;
-    max-width: 750px; /* Aumentado de 600px para 750px */
+    max-width: 750px;
     max-height: 90vh;
     overflow-y: auto;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
@@ -32,7 +32,6 @@
     flex-direction: column;
   }
   
-  /* Custom Scrollbar */
   .schedule-modal-container::-webkit-scrollbar {
     width: 8px;
   }
@@ -56,7 +55,7 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    padding: 1.5rem 2rem; /* Aumentado padding lateral */
+    padding: 1.5rem 2rem;
     border-bottom: 1px solid #374151;
     gap: 1rem;
   }
@@ -105,7 +104,7 @@
     display: flex;
     align-items: center;
     gap: 1rem;
-    padding: 1rem 2rem; /* Aumentado padding lateral */
+    padding: 1rem 2rem;
     background: rgba(59, 130, 246, 0.1);
     border-bottom: 1px solid #374151;
   }
@@ -151,9 +150,9 @@
     color: #9ca3af;
   }
   
-  /* Body - PADDING AUMENTADO */
+  /* Body */
   .schedule-modal-body {
-    padding: 1.5rem 2rem; /* Aumentado padding lateral */
+    padding: 1.5rem 2rem;
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -214,7 +213,7 @@
     color: white;
   }
   
-  /* Calendar - MELHOR ESPAÇAMENTO */
+  /* Calendar */
   .schedule-calendar {
     border: 1px solid #374151;
     border-radius: 0.5rem;
@@ -234,25 +233,25 @@
     font-size: 0.8125rem;
     font-weight: 600;
     color: #6b7280;
-    padding: 0.875rem 0; /* Aumentado */
+    padding: 0.875rem 0;
   }
   
   .calendar-days {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 0.375rem; /* Aumentado */
-    padding: 0.75rem; /* Aumentado */
+    gap: 0.375rem;
+    padding: 0.75rem;
   }
   
   .calendar-day {
-    padding: 0.875rem; /* Aumentado */
+    padding: 0.875rem;
     border-radius: 0.5rem;
     border: none;
     background: rgba(31, 41, 55, 0.6);
     color: white;
     font-weight: 500;
     cursor: pointer;
-    font-size: 0.9375rem; /* Aumentado */
+    font-size: 0.9375rem;
     transition: all 0.2s;
     font-family: inherit;
     aspect-ratio: 1;
@@ -299,7 +298,7 @@
   /* Barber List */
   .schedule-barber-list {
     display: grid;
-    grid-template-columns: repeat(2, 1fr); /* 2 colunas */
+    grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;
   }
   
@@ -375,14 +374,14 @@
   .schedule-time-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
-    gap: 0.625rem; /* Aumentado */
+    gap: 0.625rem;
   }
   
   .schedule-time-button {
     background: #111827;
     border: 1px solid #374151;
     color: #d1d5db;
-    padding: 0.75rem; /* Aumentado */
+    padding: 0.75rem;
     border-radius: 0.5rem;
     font-size: 0.875rem;
     font-weight: 500;
@@ -417,7 +416,7 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    padding: 1.5rem 2rem; /* Aumentado padding lateral */
+    padding: 1.5rem 2rem;
     border-top: 1px solid #374151;
     background: rgba(15, 23, 42, 0.5);
   }
@@ -622,7 +621,6 @@
     }
   }
   
-  /* Accessibility */
   .schedule-close-button:focus-visible,
   .month-nav-button:focus-visible,
   .calendar-day:focus-visible,

@@ -1,138 +1,101 @@
-import React, { useState } from 'react';
-import './ClientHome.css';
+import React, { useState, useEffect } from 'react';
 import { FaMapMarkerAlt, FaBell, FaSearch } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../contexts/authContext';
+import api from '../../../services/api';
+import './ClientHome.css';
 
-function Header(props) {
+function Header({ greeting, date, onNotificationClick, user }) {
   return (
     <header className="header">
       <div>
-        <h1 className="greeting">{props.greeting}</h1>
-        <p className="date">{props.date}</p>
+        <h1 className="greeting">{greeting}</h1>
+        <p className="date">{date}</p>
       </div>
-      <Button 
+      <button 
         className="notification-btn"
-        onClick={props.onNotificationClick}
-        ariaLabel="Notificações"
+        onClick={onNotificationClick}
+        aria-label="Notificações"
       >
         <FaBell size={24} />
-      </Button>
+      </button>
     </header>
   );
 }
 
-function SearchBar(props) {
+function SearchBar({ placeholder, value, onChange }) {
   return (
     <div className="search-container">
       <div className="search-wrapper">
         <FaSearch className="search-icon" size={20} />
         <input
           type="text"
-          placeholder={props.placeholder}
+          placeholder={placeholder}
           className="search-input"
-          value={props.value}
-          onChange={props.onChange}
+          value={value}
+          onChange={onChange}
         />
       </div>
     </div>
   );
 }
 
-function SectionTitle(props) {
-  return <h2 className="section-title">{props.text}</h2>;
-}
-
-function BarbershopAvatar(props) {
+function BarbershopCard({ name, address, distance, onClick }) {
   return (
-    <div className="avatar">
-      <div className="avatar-icon">👤</div>
-    </div>
-  );
-}
-
-function BarbershopInfo(props) {
-  return (
-    <div className="card-info">
-      <h3 className="barbershop-name">{props.name}</h3>
-      <p className="barbershop-address">{props.address}</p>
-    </div>
-  );
-}
-
-function BarbershopDistance(props) {
-  return (
-    <div className="card-right">
-      <FaMapMarkerAlt size={18} className="location-icon" />
-      <span className="distance">{props.distance}</span>
-    </div>
-  );
-}
-
-function BarbershopCard(props) {
-  return (
-    <div className="barbershop-card" onClick={props.onClick}>
+    <div className="barbershop-card" onClick={onClick}>
       <div className="card-left">
-        <BarbershopAvatar />
-        <BarbershopInfo 
-          name={props.name}
-          address={props.address}
-        />
+        <div className="avatar">
+          <div className="avatar-icon">👤</div>
+        </div>
+        <div className="card-info">
+          <h3 className="barbershop-name">{name}</h3>
+          <p className="barbershop-address">{address}</p>
+        </div>
       </div>
-      <BarbershopDistance distance={props.distance} />
+      <div className="card-right">
+        <FaMapMarkerAlt size={18} className="location-icon" />
+        <span className="distance">{distance}</span>
+      </div>
     </div>
   );
 }
 
-function BarbershopList(props) {
-  return (
-    <div className="barbershop-list">
-      {props.barbershops.map((shop) => (
-        <BarbershopCard 
-          key={shop.id}
-          name={shop.name}
-          address={shop.address}
-          distance={shop.distance}
-          onClick={() => props.onCardClick(shop.id)}
-        />
-      ))}
-    </div>
-  );
-}
-
-function MainContent(props) {
-  return (
-    <main className="main-content">
-      <SectionTitle text={props.title} />
-      <BarbershopList 
-        barbershops={props.barbershops}
-        onCardClick={props.onCardClick}
-      />
-    </main>
-  );
-}
-
-function Button(props) {
-  return (
-    <button 
-      type={props.type || "button"}
-      className={props.className}
-      onClick={props.onClick}
-      aria-label={props.ariaLabel}
-    >
-      {props.children}
-    </button>
-  );
-}
-
-const HomePage = () => {
+const ClientHome = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [barbershops, setBarbershops] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const barbershops = [
-    { id: 1, name: 'Barbearia Faustino', address: 'Endereço', distance: '1.2km' },
-    { id: 2, name: 'Barbearia 02', address: 'Endereço', distance: '1.6km' },
-    { id: 3, name: 'Barbearia 03', address: 'Endereço', distance: '1.8km' },
-    { id: 4, name: 'Barbearia 04', address: 'Endereço', distance: '2.3km' },
-    { id: 5, name: 'Barbearia 05', address: 'Endereço', distance: '5.2km' }
-  ];
+  useEffect(() => {
+    loadBarbershops();
+  }, []);
+
+  const loadBarbershops = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/barbershops', {
+        params: { page: 1, limit: 20 }
+      });
+      
+      const data = response.data.barbershops || [];
+      setBarbershops(data.map(shop => ({
+        id: shop.id,
+        name: shop.nome_barbearia,
+        address: `${shop.cidade || ''}, ${shop.estado || ''}`,
+        distance: '1.2km' // Mock - você pode calcular depois
+      })));
+    } catch (error) {
+      console.error('Erro ao carregar barbearias:', error);
+      // Usar dados mock em caso de erro
+      setBarbershops([
+        { id: 1, name: 'Barbearia Faustino', address: 'Centro', distance: '1.2km' },
+        { id: 2, name: 'Barbearia Style', address: 'Jardim', distance: '1.6km' }
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredBarbershops = barbershops.filter(shop =>
     shop.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -147,16 +110,33 @@ const HomePage = () => {
   };
 
   const handleCardClick = (id) => {
-    console.log('Barbearia clicada:', id);
-    // Aqui você pode navegar para a página de detalhes da barbearia
+    navigate(`/client/barbearia/${id}`);
   };
+
+  const getCurrentDate = () => {
+    return new Date().toLocaleDateString('pt-BR', { 
+      weekday: 'long', 
+      day: 'numeric', 
+      month: 'long', 
+      year: 'numeric' 
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="home-page">
+        <div className="loading">Carregando barbearias...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="home-page">
       <Header 
-        greeting="Olá user"
-        date="Sábado, 5 Abril 2025"
+        greeting={`Olá, ${user?.nome?.split(' ')[0] || 'Cliente'}`}
+        date={getCurrentDate()}
         onNotificationClick={handleNotificationClick}
+        user={user}
       />
 
       <SearchBar 
@@ -165,13 +145,28 @@ const HomePage = () => {
         onChange={handleSearchChange}
       />
 
-      <MainContent 
-        title="Barbearias Mais Próximas"
-        barbershops={filteredBarbershops}
-        onCardClick={handleCardClick}
-      />
+      <main className="main-content">
+        <h2 className="section-title">Barbearias Disponíveis</h2>
+        <div className="barbershop-list">
+          {filteredBarbershops.length === 0 ? (
+            <div className="no-results">
+              <p>Nenhuma barbearia encontrada</p>
+            </div>
+          ) : (
+            filteredBarbershops.map((shop) => (
+              <BarbershopCard 
+                key={shop.id}
+                name={shop.name}
+                address={shop.address}
+                distance={shop.distance}
+                onClick={() => handleCardClick(shop.id)}
+              />
+            ))
+          )}
+        </div>
+      </main>
     </div>
   );
 };
 
-export default HomePage;
+export default ClientHome;

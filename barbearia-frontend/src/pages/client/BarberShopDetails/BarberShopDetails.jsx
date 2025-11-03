@@ -12,7 +12,6 @@ import BarberServices from './BarberServices/BarberServices';
 import BarberProducts from './BarberProducts/BarberProducts';
 import BarberDetails from './BarberDetails/BarberDetails';
 import BarberAssessment from './BarberAssessment/BarberAssessment';
-import './BarberShopDetails.css';
 
 const BarberShopDetails = ({ barbershop, onBack = () => {} }) => {
   const [activeTab, setActiveTab] = useState('servicos');

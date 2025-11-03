@@ -1,38 +1,48 @@
+// ==========================================
+// src/pages/auth/AuthPage.jsx
+// ==========================================
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  AiOutlineMail, 
-  AiOutlineLock, 
-  AiOutlineUser, 
-  AiOutlinePhone, 
-  AiOutlineEye, 
+import {
+  AiOutlineMail,
+  AiOutlineLock,
+  AiOutlineUser,
+  AiOutlinePhone,
+  AiOutlineEye,
   AiOutlineEyeInvisible,
   AiOutlineCheckCircle,
-  AiOutlineExclamationCircle
+  AiOutlineKey
 } from 'react-icons/ai';
 import { MdSecurity } from 'react-icons/md';
+import { useAuth } from '../../contexts/authContext';
 import './AuthPage.css';
 
-function FormInput({ 
-  label, 
-  icon: Icon, 
-  type, 
-  name, 
-  value, 
-  onChange, 
-  placeholder, 
-  maxLength, 
-  autoComplete, 
-  error, 
-  required, 
-  showToggle, 
-  onToggle, 
-  showValue 
+// Mapeamento de hashes para tipos de usuário
+const AUTH_HASH_MAP = {
+  'c1a2b3': 'cliente',
+  'b4r5b6': 'barbeiro'
+};
+
+function FormInput({
+  label,
+  icon: Icon,
+  type = 'text',
+  name,
+  value,
+  onChange,
+  placeholder,
+  maxLength,
+  autoComplete,
+  error,
+  required,
+  showToggle,
+  onToggle,
+  showValue
 }) {
   return (
     <div className="form-group">
       <label className={`form-label ${required ? 'required' : ''}`}>
-        {Icon && <Icon size={16} />}
+        {Icon && <Icon size={16} style={{ marginRight: 6 }} />}
         {label}
       </label>
       <div style={{ position: 'relative' }}>
@@ -52,7 +62,7 @@ function FormInput({
             type="button"
             onClick={onToggle}
             className="password-toggle"
-            aria-label={showValue ? "Ocultar senha" : "Mostrar senha"}
+            aria-label={showValue ? "Ocultar" : "Mostrar"}
           >
             {showValue ? <AiOutlineEyeInvisible size={20} /> : <AiOutlineEye size={20} />}
           </button>
@@ -78,13 +88,13 @@ function PasswordStrengthMeter({ strength }) {
 
   return (
     <div className="password-strength">
-      <div className="strength-bar">
-        <div 
-          className="strength-fill" 
-          style={{ 
+      <div className="strength-bar" aria-hidden>
+        <div
+          className="strength-fill"
+          style={{
             width: `${strength}%`,
             backgroundColor: getColor()
-          }} 
+          }}
         />
       </div>
       <div className="strength-text" style={{ color: getColor() }}>
@@ -96,7 +106,7 @@ function PasswordStrengthMeter({ strength }) {
 
 function SuccessNotification({ message }) {
   return (
-    <div className="success-notification">
+    <div className="success-notification" role="status" aria-live="polite">
       <div className="success-icon">
         <AiOutlineCheckCircle size={20} />
       </div>
@@ -107,11 +117,13 @@ function SuccessNotification({ message }) {
 
 function ModeToggle({ isLogin, onToggle }) {
   return (
-    <div className="mode-toggle">
+    <div className="mode-toggle" role="tablist" aria-label="Modo">
       <button
         type="button"
         onClick={() => onToggle(true)}
         className={`toggle-btn ${isLogin ? 'active' : ''}`}
+        role="tab"
+        aria-selected={isLogin}
       >
         Login
       </button>
@@ -119,6 +131,8 @@ function ModeToggle({ isLogin, onToggle }) {
         type="button"
         onClick={() => onToggle(false)}
         className={`toggle-btn ${!isLogin ? 'active' : ''}`}
+        role="tab"
+        aria-selected={!isLogin}
       >
         Cadastro
       </button>
@@ -126,15 +140,10 @@ function ModeToggle({ isLogin, onToggle }) {
   );
 }
 
-function PasswordMatchIndicator({ show }) {
-  // Componente removido - não exibe mais o indicador
-  return null;
-}
-
 function AuthHeader({ title, subtitle }) {
   return (
     <div className="auth-header">
-      <div className="auth-logo">
+      <div className="auth-logo" aria-hidden>
         <MdSecurity size={32} color="white" />
       </div>
       <h1 className="auth-title">{title}</h1>
@@ -145,7 +154,7 @@ function AuthHeader({ title, subtitle }) {
 
 function SecurityBadge({ text }) {
   return (
-    <div className="security-badge">
+    <div className="security-badge" aria-hidden>
       <MdSecurity size={16} />
       {text}
     </div>
@@ -181,18 +190,28 @@ function SubmitButton({ disabled, text }) {
   );
 }
 
+// Componente Principal
 const AuthPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  
-  // Detecta se está na rota de cliente ou barbeiro
-  const isClientRoute = location.pathname.includes('/cliente');
-  
-  const [isLogin, setIsLogin] = useState(true);
+  const auth = useAuth();
+
+  // Ler hash 
+  const query = new URLSearchParams(location.search);
+  const authHash = query.get('auth') || 'c1a2b3'; // Default para cliente
+
+  // Detecta tipo com base no mapeamento
+  const detectedTipo = AUTH_HASH_MAP[authHash] || 'cliente';
+
+  // Estado inicial: se pathname é /login → modo login, se /register → registro
+  const initialIsLogin = location.pathname === '/login';
+
+  const [isLogin, setIsLogin] = useState(initialIsLogin);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showAccessCode, setShowAccessCode] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [successMessage, setSuccessMessage] = useState('');
   const [form, setForm] = useState({
@@ -200,31 +219,32 @@ const AuthPage = () => {
     email: '',
     senha: '',
     confirmarSenha: '',
-    telefone: ''
+    telefone: '',
+    codigoAcesso: ''
   });
 
-  // Limpa formulário ao trocar modo
+  // Reset quando muda entre login/register ou quando muda query/path
   useEffect(() => {
-    setForm({
-      nome: '',
-      email: '',
-      senha: '',
-      confirmarSenha: '',
-      telefone: ''
-    });
+    setIsLogin(location.pathname === '/login');
     setErrors({});
     setPasswordStrength(0);
     setSuccessMessage('');
     setShowPassword(false);
     setShowConfirmPassword(false);
-  }, [isLogin]);
+    setShowAccessCode(false);
+    setForm({
+      nome: '',
+      email: '',
+      senha: '',
+      confirmarSenha: '',
+      telefone: '',
+      codigoAcesso: ''
+    });
+  }, [location.pathname, location.search]);
 
-  // Auto-oculta mensagem de sucesso
   useEffect(() => {
     if (successMessage) {
-      const timer = setTimeout(() => {
-        setSuccessMessage('');
-      }, 5000);
+      const timer = setTimeout(() => setSuccessMessage(''), 5000);
       return () => clearTimeout(timer);
     }
   }, [successMessage]);
@@ -276,6 +296,9 @@ const AuthPage = () => {
       case 'nome':
         formattedValue = value.replace(/[^a-zA-ZÀ-ÿ\s]/g, '');
         break;
+      case 'codigoAcesso':
+        formattedValue = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        break;
       case 'senha':
         if (!isLogin) {
           const validation = validatePassword(value);
@@ -291,7 +314,6 @@ const AuthPage = () => {
       [name]: formattedValue
     }));
 
-    // Remove erro do campo quando usuário começa a digitar
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -303,14 +325,12 @@ const AuthPage = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    // Validação de email
     if (!form.email) {
       newErrors.email = 'Email é obrigatório';
     } else if (!validateEmail(form.email)) {
       newErrors.email = 'Email inválido';
     }
 
-    // Validação de senha
     if (!form.senha) {
       newErrors.senha = 'Senha é obrigatória';
     } else if (!isLogin) {
@@ -322,27 +342,32 @@ const AuthPage = () => {
       newErrors.senha = 'Senha deve ter no mínimo 6 caracteres';
     }
 
-    // Validações específicas do cadastro
     if (!isLogin) {
-      // Nome
       if (!form.nome) {
         newErrors.nome = 'Nome é obrigatório';
       } else if (form.nome.trim().length < 3) {
         newErrors.nome = 'Nome deve ter pelo menos 3 caracteres';
       }
 
-      // Telefone
       if (!form.telefone) {
         newErrors.telefone = 'Telefone é obrigatório';
       } else if (form.telefone.replace(/\D/g, '').length < 10) {
         newErrors.telefone = 'Telefone inválido';
       }
 
-      // Confirmação de senha
       if (!form.confirmarSenha) {
         newErrors.confirmarSenha = 'Confirme sua senha';
       } else if (form.senha !== form.confirmarSenha) {
         newErrors.confirmarSenha = 'Senhas não coincidem';
+      }
+
+      // Validação do código de acesso para barbeiros
+      if (detectedTipo === 'barbeiro') {
+        if (!form.codigoAcesso) {
+          newErrors.codigoAcesso = 'Código de acesso é obrigatório para barbeiros';
+        } else if (form.codigoAcesso.length < 6) {
+          newErrors.codigoAcesso = 'Código de acesso deve ter no mínimo 6 caracteres';
+        }
       }
     }
 
@@ -352,89 +377,129 @@ const AuthPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
+
+    if (!validateForm()) return;
 
     setIsLoading(true);
+    setErrors({}); // Limpar erros anteriores
 
     try {
-      // Simula chamada API
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
       if (isLogin) {
-        console.log('Login realizado:', { 
-          email: form.email, 
-          tipo: isClientRoute ? 'cliente' : 'barbeiro' 
-        });
+        // LOGIN
+        console.log('Tentando fazer login com:', { email: form.email, tipo: detectedTipo });
         
-        // Define mensagem de sucesso
-        setSuccessMessage('Login realizado!');
+        const response = await auth.signIn(form.email, form.senha, detectedTipo);
         
-        // Redireciona baseado no tipo de usuário
+        console.log('Response completo do signIn:', response);
+        
+        // O signIn retorna response.data.data que contém { user, token }
+        const userTipo = response?.user?.tipo || detectedTipo;
+        
+        console.log('Tipo do usuário:', userTipo);
+        
+        setSuccessMessage('Login realizado com sucesso!');
+        
+        // Redirecionar baseado no tipo
         setTimeout(() => {
-          if (isClientRoute) {
-            // Se está na rota de cliente, redireciona para área do cliente
-            navigate('/cliente');
+          if (userTipo === 'cliente') {
+            console.log('Redirecionando para /cliente');
+            navigate('/cliente', { replace: true });
+          } else if (userTipo === 'barbeiro') {
+            console.log('Redirecionando para /dashboard');
+            navigate('/dashboard', { replace: true });
           } else {
-            // Se está na rota de barbeiro, redireciona para dashboard
-            navigate('/dashboard');
+            console.warn('Tipo desconhecido, redirecionando para /cliente');
+            navigate('/cliente', { replace: true });
           }
-        }, 1500);
+        }, 800);
+
       } else {
-        console.log('Cadastro realizado:', { 
-          nome: form.nome, 
-          email: form.email, 
+        // CADASTRO
+        const payload = {
+          nome: form.nome,
+          email: form.email,
+          senha: form.senha,
           telefone: form.telefone,
-          tipo: isClientRoute ? 'cliente' : 'barbeiro'
-        });
+          tipo: detectedTipo
+        };
+
+        if (detectedTipo === 'barbeiro') {
+          payload.codigoAcesso = form.codigoAcesso;
+        }
+
+        console.log('Tentando cadastrar com:', payload);
+
+        await auth.signUp(payload);
+
+        setSuccessMessage('Cadastro realizado! Redirecionando para o login...');
         
-        setSuccessMessage('Cadastro realizado! Faça login para continuar.');
-        
-        // Troca para modo login após 2 segundos
         setTimeout(() => {
-          setIsLogin(true);
-          setSuccessMessage('');
-        }, 2000);
+          navigate(`/login?auth=${authHash}`, { replace: true });
+        }, 1500);
       }
 
-      // Limpa formulário
+      // Limpar formulário
       setForm({
         nome: '',
         email: '',
         senha: '',
         confirmarSenha: '',
-        telefone: ''
+        telefone: '',
+        codigoAcesso: ''
       });
 
     } catch (error) {
-      console.error('Erro:', error);
-      setErrors({ submit: 'Erro ao processar solicitação. Tente novamente.' });
+      console.error('Erro completo:', error);
+      
+      let errorMessage = 'Erro ao processar solicitação';
+      
+      if (error.response) {
+        // Erro vindo do servidor
+        errorMessage = error.response.data?.message || error.response.data?.error || errorMessage;
+      } else if (error.message) {
+        // Erro da biblioteca ou rede
+        errorMessage = error.message;
+      }
+      
+      setErrors({ submit: errorMessage });
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Alterna entre /login e /register preservando auth hash
+  const handleModeToggle = (nextIsLogin) => {
+    setIsLogin(nextIsLogin);
+    if (nextIsLogin) {
+      navigate(`/login?auth=${authHash}`, { replace: true });
+    } else {
+      navigate(`/register?auth=${authHash}`, { replace: true });
+    }
+  };
+
+  // Botões de alternância texto inferior
+  const handleToggleTextClick = () => {
+    if (isLogin) {
+      navigate(`/register?auth=${authHash}`);
+    } else {
+      navigate(`/login?auth=${authHash}`);
+    }
+  };
+
   return (
     <div className="auth-container">
-      <div className="auth-box">
-        {successMessage && (
-          <SuccessNotification message={successMessage} />
-        )}
-        
-        <AuthHeader 
+      <div className="auth-box" role="main">
+        {successMessage && <SuccessNotification message={successMessage} />}
+
+        <AuthHeader
           title={isLogin ? 'Bem-vindo de volta!' : 'Criar nova conta'}
-          subtitle={isLogin 
-            ? `Entre com suas credenciais ${isClientRoute ? 'de cliente' : 'de barbeiro'}` 
-            : `Cadastre-se como ${isClientRoute ? 'cliente' : 'barbeiro'}`
+          subtitle={isLogin
+            ? `Entre com suas credenciais ${detectedTipo === 'cliente' ? 'de cliente' : 'de barbeiro'}`
+            : `Cadastre-se como ${detectedTipo === 'cliente' ? 'cliente' : 'barbeiro'}`
           }
         />
 
-        <ModeToggle 
-          isLogin={isLogin} 
-          onToggle={setIsLogin} 
-        />
+        <ModeToggle isLogin={isLogin} onToggle={handleModeToggle} />
 
         <form onSubmit={handleSubmit} noValidate>
           {!isLogin && (
@@ -483,6 +548,23 @@ const AuthPage = () => {
             />
           )}
 
+          {!isLogin && detectedTipo === 'barbeiro' && (
+            <FormInput
+              label="Código de Acesso (Barbeiro)"
+              icon={AiOutlineKey}
+              name="codigoAcesso"
+              value={form.codigoAcesso}
+              onChange={handleChange}
+              placeholder="Digite o código de acesso"
+              maxLength={20}
+              error={errors.codigoAcesso}
+              required={true}
+              showToggle={true}
+              onToggle={() => setShowAccessCode(!showAccessCode)}
+              showValue={showAccessCode}
+            />
+          )}
+
           <FormInput
             label="Senha"
             icon={AiOutlineLock}
@@ -503,25 +585,20 @@ const AuthPage = () => {
           )}
 
           {!isLogin && (
-            <>
-              <FormInput
-                label="Confirmar senha"
-                icon={AiOutlineLock}
-                name="confirmarSenha"
-                value={form.confirmarSenha}
-                onChange={handleChange}
-                placeholder="Digite a senha novamente"
-                autoComplete="new-password"
-                error={errors.confirmarSenha}
-                required={true}
-                showToggle={true}
-                onToggle={() => setShowConfirmPassword(!showConfirmPassword)}
-                showValue={showConfirmPassword}
-              />
-              <PasswordMatchIndicator 
-                show={form.confirmarSenha && form.senha === form.confirmarSenha && !errors.confirmarSenha}
-              />
-            </>
+            <FormInput
+              label="Confirmar senha"
+              icon={AiOutlineLock}
+              name="confirmarSenha"
+              value={form.confirmarSenha}
+              onChange={handleChange}
+              placeholder="Digite a senha novamente"
+              autoComplete="new-password"
+              error={errors.confirmarSenha}
+              required={true}
+              showToggle={true}
+              onToggle={() => setShowConfirmPassword(!showConfirmPassword)}
+              showValue={showConfirmPassword}
+            />
           )}
 
           {errors.submit && (
@@ -530,7 +607,7 @@ const AuthPage = () => {
             </div>
           )}
 
-          <SubmitButton 
+          <SubmitButton
             disabled={isLoading}
             text={isLoading ? 'Processando...' : (isLogin ? 'Entrar' : 'Criar conta')}
           />
@@ -539,7 +616,7 @@ const AuthPage = () => {
         <ToggleText
           question={isLogin ? 'Ainda não tem conta?' : 'Já possui uma conta?'}
           linkText={isLogin ? 'Criar conta' : 'Fazer login'}
-          onClick={() => setIsLogin(!isLogin)}
+          onClick={handleToggleTextClick}
         />
 
         <SecurityBadge text="Seus dados estão protegidos com criptografia de ponta a ponta" />

@@ -2,10 +2,15 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   FiHome, FiCalendar, FiUser, FiLogOut, FiSun, FiMoon, FiMenu, FiX
-} from "react-icons/fi"; // Ícones do React Icons
-const SidebarClient = () => {  // Renomeei para SidebarClient para consistência com o App.js
+} from "react-icons/fi";
+import { useAuth } from "../../../contexts/authContext";
+import './SidebarClient.css';
+
+const SidebarClient = () => {
+  const { user, signOut } = useAuth();
   const [isLightMode, setIsLightMode] = useState(false);
-  const [isOpen, setIsOpen] = useState(false); // Para mobile
+  const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
 
   const toggleTheme = () => {
     setIsLightMode(!isLightMode);
@@ -28,11 +33,13 @@ const SidebarClient = () => {  // Renomeei para SidebarClient para consistência
     }
   }, [isLightMode]);
 
-  const navigate = useNavigate();
+  const handleLogout = () => {
+    signOut();
+    navigate('/cliente/login');
+  };
 
   return (
     <>
-      {/* Botão Hambúrguer para Mobile */}
       <button 
         className="hamburger-btn"
         onClick={toggleSidebar}
@@ -41,14 +48,17 @@ const SidebarClient = () => {  // Renomeei para SidebarClient para consistência
         {isOpen ? <FiX size={24} /> : <FiMenu size={24} />}
       </button>
 
-      {/* Sidebar */}
       <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
         <div className="profile">
           <div className="profile-icon">
-            <FiUser size={28} /> {/* Ícone genérico para cliente */}
+            {user?.foto_perfil ? (
+              <img src={user.foto_perfil} alt="Perfil" />
+            ) : (
+              <FiUser size={28} />
+            )}
           </div>
           <div className="profile-text">
-            <h2>Bem-vindo, Cliente</h2>
+            <h2>Bem-vindo, {user?.nome?.split(' ')[0] || 'Cliente'}</h2>
             <p>Agende seus serviços</p>
           </div>
         </div>
@@ -66,13 +76,12 @@ const SidebarClient = () => {  // Renomeei para SidebarClient para consistência
             {isLightMode ? <FiMoon className="icon" /> : <FiSun className="icon" />}
             {isLightMode ? "Modo Escuro" : "Modo Claro"}
           </div>
-          <div className="logout" onClick={() => navigate('/')}> {/* Pode levar para login ou home */}
+          <div className="logout" onClick={handleLogout}>
             <FiLogOut className="icon" /> Sair
           </div>
         </div>
       </aside>
 
-      {/* Overlay para Mobile */}
       {isOpen && <div className="sidebar-overlay" onClick={closeSidebar}></div>}
     </>
   );
