@@ -22,34 +22,36 @@ export const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
       const savedToken = localStorage.getItem('token');
       const savedUser = localStorage.getItem('user');
-
+  
       if (savedToken && savedUser) {
         try {
-          // Verificar se o token ainda é válido
+          // ✅ Verificar se o token ainda é válido
           const response = await axios.get(`${API_URL}/verify`, {
             headers: {
               'Authorization': `Bearer ${savedToken}`
             }
           });
-
+  
           if (response.data.success) {
             setToken(savedToken);
-            setUser(JSON.parse(savedUser));
+            setUser(response.data.user); // ✅ Usar dados atualizados do servidor
             setIsAuthenticated(true);
           } else {
             // Token inválido, limpar storage
             localStorage.removeItem('token');
             localStorage.removeItem('user');
+            setIsAuthenticated(false);
           }
         } catch (error) {
           console.error('Token inválido:', error);
           localStorage.removeItem('token');
           localStorage.removeItem('user');
+          setIsAuthenticated(false);
         }
       }
       setLoading(false);
     };
-
+  
     checkAuth();
   }, []);
 
@@ -105,30 +107,33 @@ export const AuthProvider = ({ children }) => {
         senha,
         tipo
       });
-
-      console.log('AuthContext - Response completo do login:', response.data);
-
+  
+      console.log('AuthContext - Response completo:', response);
+      console.log('AuthContext - Response.data:', response.data);
+  
       if (response.data.success) {
-        // Extrair dados do usuário e token
-        const { user: userData, token: userToken } = response.data.data;
-
-        console.log('AuthContext - Dados do usuário:', userData);
-        console.log('AuthContext - Token:', userToken);
-
+        // ✅ CORREÇÃO: Os dados vêm diretamente de response.data
+        const userData = response.data.user;
+        const userToken = response.data.token;
+  
+        console.log('AuthContext - Dados do usuário extraídos:', userData);
+        console.log('AuthContext - Token extraído:', userToken);
+        console.log('AuthContext - Tipo do usuário:', userData.tipo);
+  
         // Salvar no state
         setUser(userData);
         setToken(userToken);
         setIsAuthenticated(true);
-
+  
         // Salvar no localStorage
         localStorage.setItem('token', userToken);
         localStorage.setItem('user', JSON.stringify(userData));
-
-        // Retornar os dados para o componente
+  
+        // ✅ Retornar os dados completos
         return {
+          success: true,
           user: userData,
-          token: userToken,
-          success: true
+          token: userToken
         };
       } else {
         throw new Error(response.data.message || 'Erro ao realizar login');
@@ -235,6 +240,20 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateBarbershop = (barbershopData) => {
+    console.log('Atualizando dados da barbearia no context:', barbershopData);
+    
+    // Atualizar o usuário com os dados da barbearia
+    if (user) {
+      const updatedUser = {
+        ...user,
+        barbershop: barbershopData
+      };
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+    }
+  };
+  
   const value = {
     user,
     token,
@@ -245,7 +264,8 @@ export const AuthProvider = ({ children }) => {
     signOut,
     updateProfile,
     changePassword,
-    fetchProfile
+    fetchProfile,
+    updateBarbershop
   };
 
   return (

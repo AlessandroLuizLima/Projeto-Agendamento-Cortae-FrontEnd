@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   FiEdit, 
   FiTrash2, 
@@ -16,65 +16,13 @@ import {
 } from "react-icons/fi";
 import "./Products.css";
 
-const Products = () => {
-  const [products, setProducts] = useState([
-    { 
-      id: 1, 
-      name: "Shampoo Masculino", 
-      price: 45.0, 
-      quantity: 15,
-      category: "cuidados",
-      description: "Shampoo para cabelos masculinos",
-      cost: 25.0,
-      totalSold: 89,
-      active: true
-    },
-    { 
-      id: 2, 
-      name: "Pomada Modeladora", 
-      price: 35.0, 
-      quantity: 8,
-      category: "styling",
-      description: "Pomada para modelar cabelo",
-      cost: 18.0,
-      totalSold: 156,
-      active: true
-    },
-    { 
-      id: 3, 
-      name: "Óleo para Barba", 
-      price: 28.0, 
-      quantity: 12,
-      category: "barba",
-      description: "Óleo nutritivo para barba",
-      cost: 15.0,
-      totalSold: 234,
-      active: true
-    },
-    {
-      id: 4,
-      name: "Cera Fixadora",
-      price: 32.0,
-      quantity: 3,
-      category: "styling",
-      description: "Cera para fixação forte",
-      cost: 20.0,
-      totalSold: 67,
-      active: false
-    },
-    {
-      id: 5,
-      name: "Condicionador",
-      price: 38.0,
-      quantity: 0,
-      category: "cuidados",
-      description: "Condicionador hidratante",
-      cost: 22.0,
-      totalSold: 45,
-      active: true
-    }
-  ]);
+// ✅ URL CORRETA DA API
+const API_URL = 'http://localhost:3000/api/products';
 
+const Products = () => {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -99,19 +47,51 @@ const Products = () => {
     { key: "acessorios", label: "Acessórios", icon: FiBox }
   ];
 
-  // Calcular estatísticas - Simplificado
+  // ===== CARREGAR PRODUTOS =====
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      console.log('🔄 Buscando produtos em:', API_URL);
+      const response = await fetch(API_URL);
+      
+      if (!response.ok) {
+        throw new Error(`Erro ${response.status}: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      console.log('✅ Resposta da API:', result);
+      
+      // A API retorna { success: true, data: [...] }
+      const productsData = result.data || result;
+      setProducts(productsData);
+      console.log('✅ Produtos carregados:', productsData.length);
+    } catch (err) {
+      console.error('❌ Erro ao buscar produtos:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ===== ESTATÍSTICAS =====
   const totalProducts = products.length;
   const mostSold = products.length > 0 
     ? products.reduce((prev, current) => 
-        (prev.totalSold > current.totalSold) ? prev : current, products[0]
+        ((prev.totalSold || 0) > (current.totalSold || 0)) ? prev : current, products[0]
       ) 
     : null;
 
-  // Filtros e ordenação
+  // ===== FILTROS E ORDENAÇÃO =====
   const getFilteredAndSortedProducts = () => {
     let filtered = products.filter(product => {
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           product.description.toLowerCase().includes(searchTerm.toLowerCase());
+                           (product.description || '').toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = filterCategory === "todos" || product.category === filterCategory;
       return matchesSearch && matchesCategory;
     });
@@ -125,7 +105,7 @@ const Products = () => {
         case "quantity":
           return b.quantity - a.quantity;
         case "sales":
-          return b.totalSold - a.totalSold;
+          return (b.totalSold || 0) - (a.totalSold || 0);
         default:
           return 0;
       }
@@ -161,7 +141,7 @@ const Products = () => {
       quantity: product.quantity.toString(),
       category: product.category,
       description: product.description || "",
-      cost: product.cost?.toString() || ""
+      cost: (product.cost || 0).toString()
     });
     setShowModal(true);
   };
@@ -194,10 +174,14 @@ const Products = () => {
     setFormProduct((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  // ===== SALVAR PRODUTO (CREATE/UPDATE) =====
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formProduct.name || !formProduct.price || !formProduct.quantity) return;
+    if (!formProduct.name || !formProduct.price || !formProduct.quantity) {
+      alert('Preencha todos os campos obrigatórios!');
+      return;
+    }
 
     const formattedName = formatName(formProduct.name);
 
@@ -208,45 +192,95 @@ const Products = () => {
       category: formProduct.category,
       description: formProduct.description || "",
       cost: parseFloat(formProduct.cost) || 0,
-      totalSold: editingProduct ? editingProduct.totalSold : Math.floor(Math.random() * 100) + 10,
       active: editingProduct ? editingProduct.active : true
     };
 
-    if (editingProduct) {
-      setProducts((prev) =>
-        prev.map((p) =>
-          p.id === editingProduct.id
-            ? { ...p, ...productData }
-            : p
-        )
-      );
-    } else {
-      setProducts((prev) => [
-        ...prev,
-        {
-          id: Date.now(),
-          ...productData
+    try {
+      const url = editingProduct ? `${API_URL}/${editingProduct.id}` : API_URL;
+      const method = editingProduct ? 'PUT' : 'POST';
+
+      console.log(`${method} ${url}`, productData);
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
         },
-      ]);
+        body: JSON.stringify(productData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao salvar produto');
+      }
+
+      console.log('✅ Produto salvo com sucesso');
+      await fetchProducts();
+      closeModal();
+      
+    } catch (err) {
+      console.error('❌ Erro ao salvar produto:', err);
+      alert('Erro ao salvar produto: ' + err.message);
     }
-    closeModal();
   };
 
-  const confirmRemove = () => {
-    if (productToDelete) {
-      setProducts((prev) => prev.filter((p) => p.id !== productToDelete.id));
+  // ===== DELETAR PRODUTO =====
+  const confirmRemove = async () => {
+    if (!productToDelete) return;
+
+    try {
+      console.log(`DELETE ${API_URL}/${productToDelete.id}`);
+      
+      const response = await fetch(`${API_URL}/${productToDelete.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao deletar produto');
+      }
+
+      console.log('✅ Produto deletado com sucesso');
+      await fetchProducts();
       closeDeleteConfirm();
+      
+    } catch (err) {
+      console.error('❌ Erro ao deletar produto:', err);
+      alert('Erro ao deletar produto: ' + err.message);
     }
   };
 
-  const toggleProductStatus = (productId) => {
-    setProducts(prev => 
-      prev.map(product => 
-        product.id === productId 
-          ? { ...product, active: !product.active }
-          : product
-      )
-    );
+  // ===== ATIVAR/DESATIVAR PRODUTO =====
+  const toggleProductStatus = async (productId) => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+
+    try {
+      console.log(`PUT ${API_URL}/${productId} - Toggle active`);
+      
+      const response = await fetch(`${API_URL}/${productId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...product,
+          active: !product.active
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao atualizar status');
+      }
+
+      console.log('✅ Status atualizado com sucesso');
+      await fetchProducts();
+      
+    } catch (err) {
+      console.error('❌ Erro ao atualizar status:', err);
+      alert('Erro ao atualizar status: ' + err.message);
+    }
   };
 
   const formatPrice = (price) => {
@@ -254,10 +288,6 @@ const Products = () => {
       style: "currency",
       currency: "BRL",
     }).format(price);
-  };
-
-  const formatNumber = (value) => {
-    return new Intl.NumberFormat('pt-BR').format(value);
   };
 
   const getCategoryIcon = (category) => {
@@ -273,6 +303,38 @@ const Products = () => {
     return 'Em Estoque';
   };
 
+  // ===== LOADING STATE =====
+  if (loading) {
+    return (
+      <div className="products-page">
+        <div className="container">
+          <div className="loading-state">
+            <FiPackage size={48} />
+            <p>Carregando produtos...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ===== ERROR STATE =====
+  if (error) {
+    return (
+      <div className="products-page">
+        <div className="container">
+          <div className="error-state">
+            <FiAlertTriangle size={48} />
+            <h3>Erro ao carregar produtos</h3>
+            <p>{error}</p>
+            <button className="button-primary" onClick={fetchProducts}>
+              Tentar Novamente
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="products-page">
       <div className="container">
@@ -284,7 +346,7 @@ const Products = () => {
           </div>
         </div>
 
-        {/* Cards de Estatísticas - Simplificado */}
+        {/* Cards de Estatísticas */}
         <div className="stats-grid-simple">
           <div className="stat-card" tabIndex={0}>
             <div className="stat-card-content">
@@ -422,7 +484,7 @@ const Products = () => {
                           <span className="stat-label">Vendas</span>
                           <span className="stat-value">
                             <FiShoppingCart size={14} />
-                            {product.totalSold}
+                            {product.totalSold || 0}
                           </span>
                         </div>
                       </div>

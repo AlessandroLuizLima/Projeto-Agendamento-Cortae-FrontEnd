@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import api from "../services/api"; // import da instância axios
+import api from "../services/api";
 
 export function useServices(barbershopId = null) {
   const [services, setServices] = useState([]);
@@ -7,23 +7,35 @@ export function useServices(barbershopId = null) {
   const [error, setError] = useState(null);
 
   // ===========================
-  // 🔹 Buscar serviços por barbearia
+  // 🔹 Buscar todos os serviços
   // ===========================
   const fetchServices = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const token = localStorage.getItem("token");
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      const url = barbershopId
-        ? `/services/barbershop/${barbershopId}`
-        : `/services/barbershop`;
+      // ✅ Buscar TODOS os serviços (sem barbershopId)
+      const response = await api.get('/services');
+      
+      // ✅ A API retorna { success: true, data: [...] }
+      const servicesData = response.data.data || response.data;
+      
+      // ✅ Mapear campos do backend para o frontend
+      const mappedServices = servicesData.map(service => ({
+        id: service.id,
+        nome: service.name,
+        preco: parseFloat(service.price),
+        duracao: parseInt(service.duration),
+        category: service.category || 'corte',
+        active: service.active,
+        totalBookings: 0, // Adicione depois se tiver essa coluna
+        created_at: service.created_at,
+        updated_at: service.updated_at
+      }));
 
-      const response = await api.get(url, { headers });
-      setServices(response.data);
+      setServices(mappedServices);
     } catch (err) {
-      console.error("Erro ao buscar serviços:", err);
+      console.error("❌ Erro ao buscar serviços:", err);
       setError(err.response?.data?.message || "Erro ao buscar serviços.");
     } finally {
       setLoading(false);
@@ -40,14 +52,24 @@ export function useServices(barbershopId = null) {
   const createService = async (data) => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      const response = await api.post("/services", data, { headers });
-      setServices((prev) => [...prev, response.data]);
-      return response.data;
+      // ✅ Mapear campos do frontend para o backend
+      const serviceData = {
+        name: data.nome,
+        price: parseFloat(data.preco),
+        duration: parseInt(data.duracao),
+        category: data.category,
+        description: data.description || ''
+      };
+
+      const response = await api.post("/services", serviceData);
+      
+      // ✅ Recarregar lista após criar
+      await fetchServices();
+      
+      return response.data.data;
     } catch (err) {
-      console.error("Erro ao criar serviço:", err);
+      console.error("❌ Erro ao criar serviço:", err);
       setError(err.response?.data?.message || "Erro ao criar serviço.");
       throw err;
     } finally {
@@ -61,16 +83,25 @@ export function useServices(barbershopId = null) {
   const updateService = async (id, data) => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      const response = await api.put(`/services/${id}`, data, { headers });
-      setServices((prev) =>
-        prev.map((s) => (s.id === id ? response.data : s))
-      );
-      return response.data;
+      // ✅ Mapear campos do frontend para o backend
+      const serviceData = {
+        name: data.nome,
+        price: parseFloat(data.preco),
+        duration: parseInt(data.duracao),
+        category: data.category,
+        description: data.description || '',
+        active: data.active
+      };
+
+      const response = await api.put(`/services/${id}`, serviceData);
+      
+      // ✅ Recarregar lista após atualizar
+      await fetchServices();
+      
+      return response.data.data;
     } catch (err) {
-      console.error("Erro ao atualizar serviço:", err);
+      console.error("❌ Erro ao atualizar serviço:", err);
       setError(err.response?.data?.message || "Erro ao atualizar serviço.");
       throw err;
     } finally {
@@ -84,13 +115,13 @@ export function useServices(barbershopId = null) {
   const deleteService = async (id) => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      await api.delete(`/services/${id}`, { headers });
-      setServices((prev) => prev.filter((s) => s.id !== id));
+      await api.delete(`/services/${id}`);
+      
+      // ✅ Recarregar lista após deletar
+      await fetchServices();
     } catch (err) {
-      console.error("Erro ao deletar serviço:", err);
+      console.error("❌ Erro ao deletar serviço:", err);
       setError(err.response?.data?.message || "Erro ao deletar serviço.");
       throw err;
     } finally {
@@ -101,19 +132,18 @@ export function useServices(barbershopId = null) {
   // ===========================
   // 🔹 Alternar status (ativo/inativo)
   // ===========================
-  const toggleStatus = async (id) => {
+  const toggleServiceStatus = async (id) => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      const response = await api.patch(`/services/${id}/toggle`, {}, { headers });
-      setServices((prev) =>
-        prev.map((s) => (s.id === id ? { ...s, status: response.data.status } : s))
-      );
-      return response.data;
+      const response = await api.patch(`/services/${id}/toggle`);
+      
+      // ✅ Recarregar lista após toggle
+      await fetchServices();
+      
+      return response.data.data;
     } catch (err) {
-      console.error("Erro ao alternar status do serviço:", err);
+      console.error("❌ Erro ao alternar status do serviço:", err);
       setError(err.response?.data?.message || "Erro ao alternar status.");
       throw err;
     } finally {
@@ -129,6 +159,6 @@ export function useServices(barbershopId = null) {
     createService,
     updateService,
     deleteService,
-    toggleStatus,
+    toggleServiceStatus
   };
 }

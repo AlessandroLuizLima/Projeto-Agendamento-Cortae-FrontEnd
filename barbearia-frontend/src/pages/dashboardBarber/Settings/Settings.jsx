@@ -25,7 +25,9 @@ import { useAuth } from '../../../contexts/authContext';
 import "./Settings.css";
 
 export default function Settings() {
-  const { barbershop: contextBarbershop, updateBarbershop } = useAuth();
+  // ✅ CORREÇÃO: Remover duplicação e simplificar
+  const { user, token } = useAuth();
+  
   const [activeTab, setActiveTab] = useState("perfil");
   const [showSuccess, setShowSuccess] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
@@ -58,13 +60,23 @@ export default function Settings() {
 
   const [currentError, setCurrentError] = useState(null);
 
-  // Carregar dados da barbearia ao montar
+  // ✅ Carregar dados da barbearia ao montar
   useEffect(() => {
     const loadBarbershopData = async () => {
+      if (!token) {
+        console.log('⚠️ Sem token, não pode carregar dados da barbearia');
+        setLoadingData(false);
+        return;
+      }
+
       try {
         setLoadingData(true);
+        console.log('🔄 Carregando dados da barbearia...');
+        
         const response = await api.get('/barbershops/me');
         const data = response.data.barbershop;
+
+        console.log('✅ Dados da barbearia carregados:', data);
 
         if (data) {
           setFormData({
@@ -81,8 +93,8 @@ export default function Settings() {
               pontoReferencia: data.ponto_referencia || ""
             },
             diasAtendimento: data.dias_atendimento || ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira"],
-            horarioInicio: data.horario_inicio || "08:00",
-            horarioFim: data.horario_fim || "18:00",
+            horarioInicio: data.horario_inicio?.substring(0, 5) || "08:00", // ✅ Remover segundos
+            horarioFim: data.horario_fim?.substring(0, 5) || "18:00", // ✅ Remover segundos
             logo: data.logo || null,
             emailNotificacoes: data.email || "",
             descricao: data.descricao || ""
@@ -93,14 +105,14 @@ export default function Settings() {
           }
         }
       } catch (error) {
-        console.error('Erro ao carregar dados da barbearia:', error);
-        // Se não encontrar, usa dados do context ou padrões
-        if (contextBarbershop) {
+        console.error('❌ Erro ao carregar dados da barbearia:', error);
+        
+        // ✅ Se não encontrar, usar dados padrões
+        if (user) {
           setFormData(prev => ({
             ...prev,
-            nomeEstabelecimento: contextBarbershop.nome_estabelecimento || "",
-            telefone: contextBarbershop.telefone || "",
-            email: contextBarbershop.email || ""
+            nomeEstabelecimento: user.nome || "",
+            email: user.email || ""
           }));
         }
       } finally {
@@ -109,7 +121,7 @@ export default function Settings() {
     };
 
     loadBarbershopData();
-  }, [contextBarbershop]);
+  }, [token, user]);
 
   const tabs = [
     { key: "perfil", label: "Perfil da Empresa", icon: FiUser },
@@ -324,18 +336,17 @@ export default function Settings() {
         logo: typeof formData.logo === 'string' ? formData.logo : null
       };
 
+      console.log('📤 Enviando dados:', dataToSend);
+
       const response = await api.post('/barbershops', dataToSend);
       
-      // Atualizar context
-      if (response.data.barbershop) {
-        updateBarbershop(response.data.barbershop);
-      }
+      console.log('✅ Resposta do servidor:', response.data);
       
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
       
     } catch (error) {
-      console.error('Erro ao salvar:', error);
+      console.error('❌ Erro ao salvar:', error);
       const message = error.response?.data?.message || 'Erro ao salvar configurações';
       setCurrentError({ field: "general", message });
     } finally {

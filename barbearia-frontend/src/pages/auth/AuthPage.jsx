@@ -1,6 +1,3 @@
-// ==========================================
-// src/pages/auth/AuthPage.jsx
-// ==========================================
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -190,13 +187,15 @@ function SubmitButton({ disabled, text }) {
   );
 }
 
-// Componente Principal
+// ==========================================
+// COMPONENTE PRINCIPAL
+// ==========================================
 const AuthPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const auth = useAuth();
 
-  // Ler hash 
+  // Ler hash da URL
   const query = new URLSearchParams(location.search);
   const authHash = query.get('auth') || 'c1a2b3'; // Default para cliente
 
@@ -242,6 +241,7 @@ const AuthPage = () => {
     });
   }, [location.pathname, location.search]);
 
+  // Auto-remover mensagem de sucesso após 5 segundos
   useEffect(() => {
     if (successMessage) {
       const timer = setTimeout(() => setSuccessMessage(''), 5000);
@@ -314,6 +314,7 @@ const AuthPage = () => {
       [name]: formattedValue
     }));
 
+    // Limpar erro do campo quando o usuário digitar
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -325,12 +326,14 @@ const AuthPage = () => {
   const validateForm = () => {
     const newErrors = {};
 
+    // Validação de email
     if (!form.email) {
       newErrors.email = 'Email é obrigatório';
     } else if (!validateEmail(form.email)) {
       newErrors.email = 'Email inválido';
     }
 
+    // Validação de senha
     if (!form.senha) {
       newErrors.senha = 'Senha é obrigatória';
     } else if (!isLogin) {
@@ -342,6 +345,7 @@ const AuthPage = () => {
       newErrors.senha = 'Senha deve ter no mínimo 6 caracteres';
     }
 
+    // Validações específicas para cadastro
     if (!isLogin) {
       if (!form.nome) {
         newErrors.nome = 'Nome é obrigatório';
@@ -375,46 +379,61 @@ const AuthPage = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // ==========================================
+  // FUNÇÃO DE SUBMIT - CORRIGIDA
+  // ==========================================
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validateForm()) return;
 
     setIsLoading(true);
-    setErrors({}); // Limpar erros anteriores
+    setErrors({});
 
     try {
       if (isLogin) {
+        // ============================================
         // LOGIN
-        console.log('Tentando fazer login com:', { email: form.email, tipo: detectedTipo });
+        // ============================================
+        console.log('🔐 Tentando fazer login como:', detectedTipo);
+        console.log('📧 Email:', form.email);
         
-        const response = await auth.signIn(form.email, form.senha, detectedTipo);
+        const result = await auth.signIn(form.email, form.senha, detectedTipo);
         
-        console.log('Response completo do signIn:', response);
+        console.log('✅ Login bem-sucedido!');
+        console.log('📦 Resultado completo:', result);
+        console.log('👤 Dados do usuário:', result.user);
+        console.log('🏷️  Tipo do usuário:', result.user?.tipo);
         
-        // O signIn retorna response.data.data que contém { user, token }
-        const userTipo = response?.user?.tipo || detectedTipo;
+        // Extrair o tipo do usuário
+        const userTipo = result.user?.tipo;
         
-        console.log('Tipo do usuário:', userTipo);
+        if (!userTipo) {
+          console.error('❌ Tipo de usuário não encontrado na resposta!');
+          throw new Error('Erro ao identificar tipo de usuário');
+        }
         
+        console.log('🎯 Redirecionando usuário do tipo:', userTipo);
+        
+        // Mostrar mensagem de sucesso
         setSuccessMessage('Login realizado com sucesso!');
         
-        // Redirecionar baseado no tipo
-        setTimeout(() => {
-          if (userTipo === 'cliente') {
-            console.log('Redirecionando para /cliente');
-            navigate('/cliente', { replace: true });
-          } else if (userTipo === 'barbeiro') {
-            console.log('Redirecionando para /dashboard');
-            navigate('/dashboard', { replace: true });
-          } else {
-            console.warn('Tipo desconhecido, redirecionando para /cliente');
-            navigate('/cliente', { replace: true });
-          }
-        }, 800);
+        // ✅ Redirecionar imediatamente baseado no tipo
+        if (userTipo === 'cliente') {
+          console.log('➡️  Navegando para /cliente');
+          navigate('/cliente', { replace: true });
+        } else if (userTipo === 'barbeiro') {
+          console.log('➡️  Navegando para /dashboard');
+          navigate('/dashboard', { replace: true });
+        } else {
+          console.warn('⚠️  Tipo desconhecido:', userTipo, '- Redirecionando para /cliente');
+          navigate('/cliente', { replace: true });
+        }
 
       } else {
+        // ============================================
         // CADASTRO
+        // ============================================
         const payload = {
           nome: form.nome,
           email: form.email,
@@ -427,18 +446,21 @@ const AuthPage = () => {
           payload.codigoAcesso = form.codigoAcesso;
         }
 
-        console.log('Tentando cadastrar com:', payload);
+        console.log('📝 Tentando cadastrar com:', payload);
 
         await auth.signUp(payload);
 
+        console.log('✅ Cadastro realizado com sucesso!');
+        
         setSuccessMessage('Cadastro realizado! Redirecionando para o login...');
         
+        // Para cadastro, mantém o setTimeout pois queremos que o usuário veja a mensagem
         setTimeout(() => {
           navigate(`/login?auth=${authHash}`, { replace: true });
         }, 1500);
       }
 
-      // Limpar formulário
+      // Limpar formulário após sucesso
       setForm({
         nome: '',
         email: '',
@@ -449,19 +471,23 @@ const AuthPage = () => {
       });
 
     } catch (error) {
-      console.error('Erro completo:', error);
+      console.error('❌ Erro completo:', error);
       
       let errorMessage = 'Erro ao processar solicitação';
       
       if (error.response) {
         // Erro vindo do servidor
-        errorMessage = error.response.data?.message || error.response.data?.error || errorMessage;
+        errorMessage = error.response.data?.message || 
+                      error.response.data?.error || 
+                      'Erro no servidor';
+        console.error('Erro do servidor:', error.response.data);
       } else if (error.message) {
-        // Erro da biblioteca ou rede
+        // Erro da biblioteca ou customizado
         errorMessage = error.message;
       }
       
       setErrors({ submit: errorMessage });
+      setSuccessMessage(''); // Limpar mensagem de sucesso em caso de erro
     } finally {
       setIsLoading(false);
     }

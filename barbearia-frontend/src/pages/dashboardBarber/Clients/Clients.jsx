@@ -1,37 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FiSearch, 
-  FiPlus, 
   FiUser, 
   FiCalendar, 
   FiUsers,
   FiPhone,
   FiMail,
   FiMapPin,
-  FiEdit2,
-  FiTrash2,
   FiTrendingUp,
-  FiStar,
   FiX,
   FiScissors,
-  FiClock
+  FiClock,
+  FiCheckCircle,
+  FiAlertCircle,
+  FiDollarSign,
+  FiActivity
 } from 'react-icons/fi';
 import './Clients.css';
-import { useClients } from '../../../hooks/useClients';	
 
 const Clients = () => {
-  const { 
-    clients, 
-    loading, 
-    error, 
-    createClient, 
-    updateClient, 
-    deleteClient,
-    getClientHistory 
-  } = useClients();
-
-  const [showModal, setShowModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
+  const [clients, setClients] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
   const [clientHistory, setClientHistory] = useState([]);
@@ -39,17 +29,42 @@ const Clients = () => {
   const [filterStatus, setFilterStatus] = useState('todos');
   const [sortBy, setSortBy] = useState('name');
   const [showValues, setShowValues] = useState(true);
-  const [newClient, setNewClient] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    address: ''
-  });
 
-  // Proteções contra undefined
+  const API_URL = 'http://localhost:3000/api/clients';
+
+  // ===== CARREGAR CLIENTES =====
+  useEffect(() => {
+    fetchClients();
+  }, []);
+
+  const fetchClients = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      console.log('Buscando clientes em:', API_URL);
+      const response = await fetch(API_URL);
+      
+      if (!response.ok) {
+        throw new Error(`Erro ${response.status}: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      console.log('Resposta da API:', result);
+      
+      const clientsData = result.data || result;
+      setClients(clientsData);
+      console.log('Clientes carregados:', clientsData.length);
+    } catch (err) {
+      console.error('Erro ao buscar clientes:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ===== ESTATÍSTICAS =====
   const safeClients = clients || [];
-
-  // Calcular estatísticas
   const totalClients = safeClients.length;
   const activeClients = safeClients.filter(client => 
     client && (client.status || '').toLowerCase() === 'ativo'
@@ -64,31 +79,26 @@ const Clients = () => {
     return clientDate >= oneMonthAgo;
   }).length;
 
-  const totalRevenue = safeClients.reduce((acc, client) => {
-    const val = Number((client && client.totalSpent) || 0);
-    return acc + val;
-  }, 0);
-
-  const averageSpent = totalClients > 0 ? totalRevenue / totalClients : 0;
-  const averageVisits = totalClients > 0 ? safeClients.reduce((acc, client) => acc + Number((client && client.visits) || 0), 0) / totalClients : 0;
-  const averageRating = totalClients > 0 ? safeClients.reduce((acc, client) => acc + Number((client && client.rating) || 0), 0) / totalClients : 0;
-
-  const topClients = [...safeClients]
-    .sort((a, b) => (Number(b && b.totalSpent) || 0) - (Number(a && a.totalSpent) || 0))
-    .slice(0, 3);
-
-  // Filtros e ordenação
+  // ===== FILTROS E ORDENAÇÃO MELHORADOS =====
   const getFilteredAndSortedClients = () => {
-    const searchLower = (searchTerm || '').toLowerCase();
+    const searchLower = (searchTerm || '').toLowerCase().trim();
 
     let filtered = safeClients.filter(client => {
+      if (!searchLower) return true;
+
       const name = (client && client.name) ? String(client.name).toLowerCase() : '';
       const email = (client && client.email) ? String(client.email).toLowerCase() : '';
-      const phone = (client && client.phone) ? String(client.phone) : '';
-
-      const matchesSearch =
-        (searchLower && (name.includes(searchLower) || email.includes(searchLower) || phone.includes(searchTerm))) ||
-        (!searchLower);
+      const phone = (client && client.phone) ? String(client.phone).replace(/\D/g, '') : '';
+      const address = (client && client.address) ? String(client.address).toLowerCase() : '';
+      
+      // Busca mais inteligente
+      const searchDigits = searchTerm.replace(/\D/g, '');
+      
+      const matchesSearch = 
+        name.includes(searchLower) || 
+        email.includes(searchLower) || 
+        address.includes(searchLower) ||
+        (searchDigits && phone.includes(searchDigits));
 
       const statusNormalized = (client && client.status) ? String(client.status).toLowerCase() : '';
       const matchesStatus = filterStatus === 'todos' || statusNormalized === filterStatus.toLowerCase();
@@ -106,8 +116,6 @@ const Clients = () => {
           return (Number(b && b.totalSpent) || 0) - (Number(a && a.totalSpent) || 0);
         case 'visits':
           return (Number(b && b.visits) || 0) - (Number(a && a.visits) || 0);
-        case 'rating':
-          return (Number(b && b.rating) || 0) - (Number(a && a.rating) || 0);
         default:
           return 0;
       }
@@ -116,68 +124,33 @@ const Clients = () => {
 
   const filteredClients = getFilteredAndSortedClients();
 
-  const handleAddClient = async () => {
-    if (newClient.name && newClient.phone) {
-      try {
-        await createClient(newClient);
-        setNewClient({ name: '', phone: '', email: '', address: '' });
-        setShowModal(false);
-        alert('Cliente cadastrado com sucesso!');
-      } catch (error) {
-        alert(error.message);
-      }
-    }
-  };
-
-  const handleEditClient = async () => {
-    if (selectedClient && newClient.name && newClient.phone) {
-      try {
-        await updateClient(selectedClient.id, newClient);
-        setShowEditModal(false);
-        setSelectedClient(null);
-        setNewClient({ name: '', phone: '', email: '', address: '' });
-        alert('Cliente atualizado com sucesso!');
-      } catch (error) {
-        alert(error.message);
-      }
-    }
-  };
-
-  const handleDeleteClient = async (clientId) => {
-    if (window.confirm('Tem certeza que deseja excluir este cliente?')) {
-      try {
-        await deleteClient(clientId);
-        alert('Cliente deletado com sucesso!');
-      } catch (error) {
-        alert(error.message);
-      }
-    }
-  };
-
+  // ===== BUSCAR HISTÓRICO =====
   const handleClientClick = async (client) => {
     setSelectedClient(client);
+    
     try {
-      const history = await getClientHistory(client.id);
+      console.log('📊 Buscando histórico do cliente:', client.id);
+      
+      const response = await fetch(`${API_URL}/${client.id}/history`);
+      
+      if (!response.ok) {
+        throw new Error('Erro ao buscar histórico');
+      }
+      
+      const result = await response.json();
+      const history = result.data || result;
+      
+      console.log('Histórico carregado:', history.length);
       setClientHistory(history);
     } catch (error) {
       console.error('Erro ao buscar histórico:', error);
       setClientHistory([]);
     }
+    
     setShowReportModal(true);
   };
 
-  const handleEditClick = (client, e) => {
-    if (e && e.stopPropagation) e.stopPropagation();
-    setSelectedClient(client);
-    setNewClient({
-      name: client && client.name ? client.name : '',
-      phone: client && client.phone ? client.phone : '',
-      email: client && client.email ? client.email : '',
-      address: client && client.address ? client.address : ''
-    });
-    setShowEditModal(true);
-  };
-
+  // ===== FORMATAÇÕES =====
   const formatCurrency = (value) => {
     if (!showValues) return '***';
     const val = Number(value) || 0;
@@ -185,6 +158,19 @@ const Clients = () => {
       style: 'currency',
       currency: 'BRL'
     }).format(val);
+  };
+
+  const formatPhone = (phone) => {
+    if (!phone) return '—';
+    const digits = String(phone).replace(/\D/g, '');
+    
+    if (digits.length === 11) {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+    } else if (digits.length === 10) {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    }
+    
+    return phone;
   };
 
   const formatDate = (dateString) => {
@@ -198,32 +184,33 @@ const Clients = () => {
     return (status && status.toLowerCase() === 'ativo') ? 'status-active' : 'status-inactive';
   };
 
-  const renderStars = (rating) => {
-    const r = Math.max(0, Math.min(5, Number(rating) || 0));
-    return Array.from({ length: 5 }, (_, i) => (
-      <FiStar
-        key={i}
-        size={16}
-        className={i < r ? 'star-filled' : 'star-empty'}
-      />
-    ));
-  };
-
+  // ===== LOADING STATE =====
   if (loading) {
     return (
       <div className="clients-page">
         <div className="container">
-          <div className="loading">Carregando clientes...</div>
+          <div className="loading">
+            <FiUsers size={48} />
+            <p>Carregando clientes...</p>
+          </div>
         </div>
       </div>
     );
   }
 
+  // ===== ERROR STATE =====
   if (error) {
     return (
       <div className="clients-page">
         <div className="container">
-          <div className="error">Erro: {error}</div>
+          <div className="error">
+            <FiAlertCircle size={48} />
+            <h3>Erro ao carregar clientes</h3>
+            <p>{error}</p>
+            <button className="button-primary" onClick={fetchClients}>
+              Tentar Novamente
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -236,12 +223,12 @@ const Clients = () => {
         <div className="header">
           <div>
             <h1>Gestão de Clientes</h1>
-            <p>Gerencie e acompanhe todos os clientes da barbearia</p>
+            <p>Visualize e acompanhe todos os clientes da barbearia</p>
           </div>
         </div>
 
-        {/* Cards de Estatísticas */}
-        <div className="stats-grid">
+        {/* Cards de Estatísticas - APENAS 2 CARDS */}
+        <div className="stats-grid-two">
           <div className="stat-card" tabIndex={0}>
             <div className="stat-card-content">
               <div>
@@ -249,11 +236,11 @@ const Clients = () => {
                 <p className="stat-number total">{totalClients}</p>
                 <div className="stat-change neutral">
                   <FiUsers size={16} />
-                  <span>{activeClients} ativos</span>
+                  <span>{activeClients} clientes ativos</span>
                 </div>
               </div>
               <div className="stat-icon blue">
-                <FiUsers size={24} />
+                <FiUsers size={32} />
               </div>
             </div>
           </div>
@@ -266,28 +253,12 @@ const Clients = () => {
                 <div className="stat-change positive">
                   <FiTrendingUp size={16} />
                   <span>
-                    { totalClients > 0 ? `+${Math.round((newClientsThisMonth / totalClients) * 100)}% da base` : '+' }
+                    { totalClients > 0 ? `+${Math.round((newClientsThisMonth / totalClients) * 100)}% da base` : '+0%' }
                   </span>
                 </div>
               </div>
               <div className="stat-icon green">
-                <FiCalendar size={24} />
-              </div>
-            </div>
-          </div>
-
-          <div className="stat-card" tabIndex={0}>
-            <div className="stat-card-content">
-              <div>
-                <p>Avaliação Média</p>
-                <p className="stat-number period">{showValues ? averageRating.toFixed(1) : '***'}</p>
-                <div className="stat-change neutral">
-                  <FiStar size={16} />
-                  <span>{averageVisits.toFixed(1)} visitas/cliente</span>
-                </div>
-              </div>
-              <div className="stat-icon red">
-                <FiStar size={24} />
+                <FiCalendar size={32} />
               </div>
             </div>
           </div>
@@ -300,11 +271,20 @@ const Clients = () => {
               <FiSearch className="search-icon" size={20} />
               <input
                 type="text"
-                placeholder="Pesquisar por nome, telefone ou email..."
+                placeholder="Busque por nome, telefone, email ou endereço..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="search-input"
               />
+              {searchTerm && (
+                <button 
+                  className="clear-search"
+                  onClick={() => setSearchTerm('')}
+                  title="Limpar busca"
+                >
+                  <FiX size={16} />
+                </button>
+              )}
             </div>
             
             <div className="filters-container">
@@ -325,47 +305,10 @@ const Clients = () => {
               >
                 <option value="name">Ordenar por Nome</option>
                 <option value="date">Data de Cadastro</option>
-                <option value="spent">Valor Gasto</option>
-                <option value="visits">Número de Visitas</option>
-                <option value="rating">Avaliação</option>
+                <option value="spent">Mais Gastos</option>
+                <option value="visits">Mais Visitas</option>
               </select>
             </div>
-
-            <button
-              onClick={() => setShowModal(true)}
-              className="add-button"
-            >
-              <FiPlus size={20} />
-              Novo Cliente
-            </button>
-          </div>
-        </div>
-
-        {/* Top Clientes */}
-        <div className="top-clients-section">
-          <div className="section-header">
-            <h2>Top Clientes</h2>
-            <p>Clientes com maior faturamento</p>
-          </div>
-          <div className="top-clients-grid">
-            {topClients.map((client, index) => (
-              <div key={client && client.id ? client.id : index} className={`top-client-card rank-${index + 1}`}>
-                <div className="rank-badge">{index + 1}º</div>
-                <div className="client-avatar">
-                  <FiUser size={20} />
-                </div>
-                <div className="top-client-info">
-                  <h4>{(client && client.name) || '—'}</h4>
-                  <p className="top-client-spent">{formatCurrency(client && client.totalSpent)}</p>
-                  <div className="top-client-stats">
-                    <span>{(client && client.visits) || 0} visitas</span>
-                    <div className="rating-stars">
-                      {renderStars(client && client.rating)}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
 
@@ -373,6 +316,17 @@ const Clients = () => {
         <div className="clients-list">
           <div className="clients-list-header">
             <h2>Lista de Clientes ({filteredClients.length})</h2>
+            <div className="list-header-info">
+              {searchTerm && (
+                <span className="search-badge">
+                  <FiSearch size={14} /> 
+                  Buscando: "{searchTerm}"
+                </span>
+              )}
+              {sortBy === 'spent' && <span className="filter-badge"><FiDollarSign size={14} /> Ordenado por Gastos</span>}
+              {sortBy === 'visits' && <span className="filter-badge"><FiActivity size={14} /> Ordenado por Visitas</span>}
+              {sortBy === 'date' && <span className="filter-badge"><FiCalendar size={14} /> Ordenado por Data</span>}
+            </div>
           </div>
           
           <div className="clients-list-content">
@@ -385,9 +339,17 @@ const Clients = () => {
                 <p>
                   {searchTerm 
                     ? 'Tente alterar os filtros ou termos de busca'
-                    : 'Cadastre seu primeiro cliente para começar'
+                    : 'Aguardando cadastro de clientes no sistema'
                   }
                 </p>
+                {searchTerm && (
+                  <button 
+                    className="button-primary"
+                    onClick={() => setSearchTerm('')}
+                  >
+                    Limpar Busca
+                  </button>
+                )}
               </div>
             ) : (
               filteredClients.map((client) => (
@@ -409,7 +371,7 @@ const Clients = () => {
                           </span>
                         </div>
                         <div className="client-contact">
-                          <span><FiPhone size={14} /> {(client && client.phone) || '—'}</span>
+                          <span><FiPhone size={14} /> {formatPhone(client && client.phone)}</span>
                           {(client && client.email) && <span><FiMail size={14} /> {client.email}</span>}
                         </div>
                         <div className="client-meta">
@@ -429,32 +391,6 @@ const Clients = () => {
                           <span className="stat-label">Visitas</span>
                           <span className="stat-value">{(client && client.visits) || 0}</span>
                         </div>
-                        <div className="stat-item">
-                          <span className="stat-label">Avaliação</span>
-                          <div className="rating-display">
-                            {renderStars(client && client.rating)}
-                            <span className="rating-number">({(client && client.rating) || 0})</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="client-actions">
-                        <button
-                          onClick={(e) => handleEditClick(client, e)}
-                          className="action-button edit"
-                          title="Editar cliente"
-                        >
-                          <FiEdit2 size={16} />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteClient(client && client.id);
-                          }}
-                          className="action-button delete"
-                          title="Excluir cliente"
-                        >
-                          <FiTrash2 size={16} />
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -465,178 +401,12 @@ const Clients = () => {
         </div>
       </div>
 
-      {/* Modal de Cadastro */}
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <div className="modal-header">
-              <h2>Cadastrar Novo Cliente</h2>
-              <button 
-                className="modal-close"
-                onClick={() => setShowModal(false)}
-              >
-                <FiX size={20} />
-              </button>
-            </div>
-            
-            <div className="modal-content">
-              <div className="form-grid">
-                <div className="form-group">
-                  <label className="form-label">Nome Completo *</label>
-                  <input
-                    type="text"
-                    value={newClient.name}
-                    onChange={(e) => setNewClient({...newClient, name: e.target.value})}
-                    className="form-input"
-                    placeholder="Digite o nome completo"
-                    required
-                  />
-                </div>
-                
-                <div className="form-group">
-                  <label className="form-label">Telefone *</label>
-                  <input
-                    type="tel"
-                    value={newClient.phone}
-                    onChange={(e) => setNewClient({...newClient, phone: e.target.value})}
-                    className="form-input"
-                    placeholder="(11) 99999-9999"
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Email</label>
-                  <input
-                    type="email"
-                    value={newClient.email}
-                    onChange={(e) => setNewClient({...newClient, email: e.target.value})}
-                    className="form-input"
-                    placeholder="cliente@email.com"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Endereço</label>
-                  <input
-                    type="text"
-                    value={newClient.address}
-                    onChange={(e) => setNewClient({...newClient, address: e.target.value})}
-                    className="form-input"
-                    placeholder="Rua, número, bairro"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <div className="modal-footer">
-              <button
-                onClick={() => setShowModal(false)}
-                className="button-secondary"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleAddClient}
-                disabled={!newClient.name || !newClient.phone}
-                className="button-primary"
-              >
-                Cadastrar Cliente
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de Edição */}
-      {showEditModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <div className="modal-header">
-              <h2>Editar Cliente</h2>
-              <button 
-                className="modal-close"
-                onClick={() => setShowEditModal(false)}
-              >
-                <FiX size={20} />
-              </button>
-            </div>
-            
-            <div className="modal-content">
-              <div className="form-grid">
-                <div className="form-group">
-                  <label className="form-label">Nome Completo *</label>
-                  <input
-                    type="text"
-                    value={newClient.name}
-                    onChange={(e) => setNewClient({...newClient, name: e.target.value})}
-                    className="form-input"
-                    placeholder="Digite o nome completo"
-                    required
-                  />
-                </div>
-                
-                <div className="form-group">
-                  <label className="form-label">Telefone *</label>
-                  <input
-                    type="tel"
-                    value={newClient.phone}
-                    onChange={(e) => setNewClient({...newClient, phone: e.target.value})}
-                    className="form-input"
-                    placeholder="(11) 99999-9999"
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Email</label>
-                  <input
-                    type="email"
-                    value={newClient.email}
-                    onChange={(e) => setNewClient({...newClient, email: e.target.value})}
-                    className="form-input"
-                    placeholder="cliente@email.com"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Endereço</label>
-                  <input
-                    type="text"
-                    value={newClient.address}
-                    onChange={(e) => setNewClient({...newClient, address: e.target.value})}
-                    className="form-input"
-                    placeholder="Rua, número, bairro"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <div className="modal-footer">
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="button-secondary"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleEditClient}
-                disabled={!newClient.name || !newClient.phone}
-                className="button-primary"
-              >
-                Salvar Alterações
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Modal de Relatório */}
       {showReportModal && selectedClient && (
-        <div className="modal-overlay">
-          <div className="modal modal-report">
+        <div className="modal-overlay" onClick={() => setShowReportModal(false)}>
+          <div className="modal modal-report" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Relatório Detalhado</h2>
+              <h2>Relatório do Cliente</h2>
               <button
                 onClick={() => setShowReportModal(false)}
                 className="modal-close"
@@ -654,7 +424,7 @@ const Clients = () => {
                   <div className="profile-info">
                     <h3>{selectedClient && selectedClient.name}</h3>
                     <div className="profile-details">
-                      <span><FiPhone size={14} /> {selectedClient && selectedClient.phone}</span>
+                      <span><FiPhone size={14} /> {formatPhone(selectedClient && selectedClient.phone)}</span>
                       {selectedClient && selectedClient.email && <span><FiMail size={14} /> {selectedClient.email}</span>}
                       {selectedClient && selectedClient.address && <span><FiMapPin size={14} /> {selectedClient.address}</span>}
                     </div>
@@ -674,10 +444,8 @@ const Clients = () => {
                     <span className="stat-label">Visitas</span>
                   </div>
                   <div className="profile-stat">
-                    <div className="rating-display">
-                      {renderStars(selectedClient && selectedClient.rating)}
-                    </div>
-                    <span className="stat-label">Avaliação</span>
+                    <span className="stat-number">{formatDate(selectedClient && selectedClient.registrationDate)}</span>
+                    <span className="stat-label">Cliente Desde</span>
                   </div>
                   <div className="profile-stat">
                     <span className="stat-number">{formatDate(selectedClient && selectedClient.lastVisit)}</span>
@@ -728,18 +496,9 @@ const Clients = () => {
             <div className="modal-footer">
               <button
                 onClick={() => setShowReportModal(false)}
-                className="button-secondary"
-              >
-                Fechar Relatório
-              </button>
-              <button
-                onClick={() => {
-                  setShowReportModal(false);
-                  handleEditClick(selectedClient, { stopPropagation: () => {} });
-                }}
                 className="button-primary"
               >
-                Editar Cliente
+                Fechar Relatório
               </button>
             </div>
           </div>

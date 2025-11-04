@@ -17,7 +17,6 @@ import './Report.css';
 const Reports = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('mensal');
   const [showValues, setShowValues] = useState(true);
-  const [selectedReport, setSelectedReport] = useState('geral');
 
   // Dados simulados para relatórios
   const dailyReports = [
@@ -335,29 +334,10 @@ const Reports = () => {
         {/* Header */}
         <div className="header">
           <div>
-            <h1>Relatórios Detalhados</h1>
-            <p>Análises completas e insights do negócio</p>
+            <h1>Relatório Geral</h1>
+            <p>Análises completas e insights do seu negócio</p>
           </div>
           <div className="header-actions">
-            {/* Filtro de relatório */}
-            <div className="report-selector" role="group" aria-label="Selecionar tipo de relatório">
-              {[
-                { key: 'geral', label: 'Geral' },
-                { key: 'clientes', label: 'Clientes' },
-                { key: 'servicos', label: 'Serviços' },
-                { key: 'tempo', label: 'Tempo' }
-              ].map(report => (
-                <button
-                  key={report.key}
-                  className={`report-btn ${selectedReport === report.key ? 'active' : ''}`}
-                  onClick={() => setSelectedReport(report.key)}
-                  aria-pressed={selectedReport === report.key}
-                >
-                  {report.label}
-                </button>
-              ))}
-            </div>
-            
             {/* Período */}
             <div className="period-selector" role="group" aria-label="Selecionar período">
               {[
